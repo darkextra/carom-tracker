@@ -1,7 +1,7 @@
-<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#102b26"><title>Carom Tracker · Mobile V0.16</title><style>
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#102b26"><title>Carom Tracker · Mobile V0.17</title><style>
 :root{color-scheme:dark;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0c1e1a;color:#f4f6f2}*{box-sizing:border-box}body{margin:0;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}main{max-width:900px;margin:auto;padding:15px}header{display:flex;align-items:center;justify-content:space-between;margin:4px 0 14px}h1{font-size:21px;margin:0}small,.hint{color:#aabdb5}small{font-size:12px}.panel{background:#16332c;border:1px solid #2b5145;border-radius:15px;padding:13px;margin-bottom:12px}.stage{position:relative;background:#07120f;border-radius:10px;overflow:hidden;line-height:0;touch-action:manipulation}video{display:block;width:100%;height:auto;max-height:65vh;background:#07120f}canvas#overlay{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}canvas#overlay.pick,canvas#overlay.zone{pointer-events:auto;touch-action:none}.controls{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}button,.filebtn,select{background:#275746;border:1px solid #467b66;color:white;border-radius:10px;padding:11px 13px;font-size:14px;font-weight:600;cursor:pointer}button:disabled{opacity:.35}button.primary,.filebtn{background:#3b8467}.filebtn input{display:none}.row{display:flex;gap:12px;align-items:center;justify-content:space-between;margin:11px 0;flex-wrap:wrap}.row label{font-size:14px}input[type=range]{accent-color:#77dfac;max-width:190px;width:44vw}#seek{width:100%;max-width:none}.chips{display:flex;gap:7px;flex-wrap:wrap}.chip{border:1px solid #547365;border-radius:8px;padding:8px 10px;font-size:13px}.dot{display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:middle;margin-right:5px}.status{font-size:13px;line-height:1.5;color:#c9ddd4;white-space:pre-wrap}.muted{color:#a4b6ad;font-size:12px;line-height:1.6}progress{width:100%;accent-color:#7ee5b4}a{color:#9eecc7}.separator{height:1px;background:#345648;margin:12px 0}#magnifyPanel{display:none;margin:10px 0;padding:12px;border:1px solid #4e987c;border-radius:12px;background:#102820}#magnifyPanel.active{display:block}#magnifyCanvas{display:block;width:min(100%,320px);height:auto;aspect-ratio:1;background:#07120f;margin:10px auto;touch-action:none;border:1px solid #71bb9d;border-radius:8px}#magnifyPanel .controls{justify-content:center}#magnifyHint{font-size:13px;line-height:1.5;color:#d8e7e0}.activePreview{background:#327b60!important;border-color:#a0e9bc!important}</style></head><body><main><header><div><h1>◉ Carom Tracker</h1><small>모바일 · 브라우저 내 처리 · V0.2 기반 · V0.16</small></div><small>3-CUSHION</small></header>
 <section class="panel"><div class="controls"><label class="filebtn">📁 영상 선택<input id="file" type="file" accept="video/*"></label><button id="play" disabled>▶ 재생</button><button id="preview" disabled aria-pressed="false">◎ 궤적 영상 보기</button><button id="back" disabled>◀ 1프레임</button><button id="forward" disabled>1프레임 ▶</button></div><div class="stage" id="stage"><video id="video" playsinline webkit-playsinline preload="metadata"></video><canvas id="overlay"></canvas></div><div id="magnifyPanel"><b>🔎 공 중심 확대 지정</b><p id="magnifyHint">확대 화면에서 공의 정확한 중심을 터치한 다음 확정하세요.</p><canvas id="magnifyCanvas" width="320" height="320"></canvas><div class="controls"><button id="confirmPoint">✓ 중심 확정</button><button id="cancelPoint">취소</button></div></div><input id="seek" type="range" min="0" max="1000" value="0" disabled><div class="row"><small id="clock">00:00.00 / 00:00.00</small><small id="dimensions">동영상을 선택하세요</small></div><div class="row"><label>재생 속도 <select id="speed"><option value="0.25">0.25×</option><option value="0.5">0.5×</option><option value="0.75">0.75×</option><option value="1" selected>1×</option><option value="1.5">1.5×</option><option value="2">2×</option></select></label><small id="frameinfo">FPS: 분석 대기</small></div><div class="row"><label>원본 FPS (수동 입력, 기본 30) <input id="sourcefps" type="number" min="1" max="240" step="0.001" value="30" style="width:88px;background:#275746;color:white;border:1px solid #467b66;border-radius:8px;padding:8px"></label><small id="framecount">총 프레임: -</small></div></section>
-<section class="panel"><b>당구대 이동 가능 영역</b><p class="muted">자동 추정 후 네 꼭짓점을 손가락으로 끌어 조정하세요. 편집을 확정하면 이 영역을 중심으로 공을 탐색하고 다른 당구대 후보를 제외합니다. 경계선에는 여유를 두며 쿠션 충돌 위치나 예측 궤적의 끝점으로 사용하지 않습니다. 자동 인식이 실패하면 전체 영상이 기본 영역입니다.</p><div class="controls"><button id="autoZone" disabled>▱ 당구대 자동 추정</button><button id="editZone" disabled>✥ 꼭짓점 드래그</button><button id="resetZone" disabled>전체 화면으로 초기화</button></div><div class="status" id="zoneStatus">영상 선택 후 자동 추정할 수 있습니다.</div></section>
+<section class="panel"><b>당구대 이동 가능 영역</b><p class="muted">가장 넓은 연속 색상 영역을 자동 추정하고 네 꼭짓점을 손가락으로 끌어 조정하세요. 편집을 확정하면 이 영역을 중심으로 공을 탐색하고 다른 당구대 후보를 제외합니다. 경계선에는 여유를 두며 쿠션 충돌 위치나 예측 궤적의 끝점으로 사용하지 않습니다. 자동 인식 성공 시 곧바로 탐색 영역에 적용하며, 네 꼭짓점을 다시 끌어 조정할 수 있습니다. 실패 시 전체 영상이 기본 영역입니다.</p><div class="controls"><button id="autoZone" disabled>▱ 당구대 자동 추정</button><button id="editZone" disabled>✥ 꼭짓점 드래그</button><button id="resetZone" disabled>전체 화면으로 초기화</button></div><div class="status" id="zoneStatus">영상 선택 후 자동 추정할 수 있습니다.</div></section>
 <section class="panel"><b>① 공 중심 지정</b><p class="muted">영상 0초에서 정지한 세 공의 근처를 터치하세요. 확대 지정 후 실제 영상에서 중심과 지름을 자동 추정합니다. 흰 공과 노란 공은 큐 주변의 밝은 물체와 혼동하지 않도록 공 크기·색상·주변 천을 함께 검증합니다.</p><div class="controls"><button id="white" disabled>⚪ 흰 공 지정</button><button id="yellow" disabled>🟡 노란 공 지정</button><button id="red" disabled>🔴 빨간 공 지정</button></div><div class="chips"><span class="chip"><i class="dot" style="background:white"></i><span id="wState">미지정</span></span><span class="chip"><i class="dot" style="background:#ffdf36"></i><span id="yState">미지정</span></span><span class="chip"><i class="dot" style="background:#ff4c4c"></i><span id="rState">미지정</span></span></div><p class="muted" id="seedInfo">초기 공 지정 후 자동 추정된 중심과 지름이 표시됩니다. 추정이 불확실하면 입력한 좌표를 그대로 사용합니다.</p><div class="separator"></div><b>② 자동 분석</b><div class="row"><label>분석 간격</label><select id="fps"><option value="10">초당 10프레임 (빠름)</option><option value="15">초당 15프레임</option><option value="30" selected>초당 30프레임</option><option value="60">초당 60프레임 (빠른 공)</option><option value="90">초당 90프레임</option><option value="120">초당 120프레임 (고속 촬영)</option></select></div><p class="muted">원본에 가까운 해상도 + 빨간 공 몸체 색상 학습 + 흰/노란 수구 원형 패치 검증 + 놓친 공 전역 재탐색 + 재확인 후 ID 연결. 실제로 확인하지 못한 위치에 궤적을 그리지 않습니다. 당구대 경계를 충돌점으로 취급하지 않습니다. 원본 FPS보다 높은 분석 간격은 새로운 프레임을 만들지 않습니다. 60fps 이상 촬영 영상에서 높은 값을 선택하세요.</p><div class="controls"><button class="primary" id="analyze" disabled>◎ 전체 영상 분석</button><button id="cancel" disabled>중지</button><button id="clear" disabled>궤적 초기화</button></div><progress id="progress" value="0" max="100" hidden></progress><div class="status" id="status">영상을 선택하면 시작할 수 있습니다.</div></section>
 <section class="panel"><b>③ 궤적 표시</b><div class="row"><label>불투명도 <span id="alphaText">60%</span></label><input id="alpha" type="range" min="10" max="100" value="60"></div><div class="row"><label>선 두께 <span id="widthText">3px</span></label><input id="thick" type="range" min="1" max="12" value="3"></div><div class="row"><label><input id="full" type="checkbox"> 전체 궤적 고정 표시 (기본 해제 · 시간에 따른 표시를 원하면 끄기)</label><label><input id="gaps" type="checkbox" checked> 누락 구간 보간 표시 (양쪽 실제 검출 확인 시에만 점선)</label><label><input id="stabilize" type="checkbox" checked> 궤적 미세 흔들림 보정 (검출 좌표는 그대로 보존)</label></div><div class="row"><label for="traceStyle">궤적 표시 형태</label><select id="traceStyle"><option value="line" selected>선만 표시 · 점 없음</option><option value="current">선 + 현재 공 위치</option><option value="all">선 + 프레임별 추적점</option></select></div><div class="controls"><button id="json" disabled>좌표 JSON 저장</button><button id="csv" disabled>좌표 CSV 저장</button></div><div class="separator"></div><b>④ 동영상 다운로드 (실험적)</b><p class="muted">원본 영상과 현재 궤적을 합성해 녹화합니다. 초록색 당구대 영역 점선은 저장 영상에 넣지 않습니다. 원본 길이만큼 재생하면서 처리하므로 시간이 걸리며, 현재 버전에서는 음성이 제외됩니다. iPhone Safari의 브라우저 녹화 지원에 따라 저장이 불가능할 수 있습니다.</p><div class="controls"><button id="export" disabled>🎬 궤적 영상 저장</button><button id="stopExport" disabled>녹화 중지</button></div><div class="status" id="exportStatus">영상 저장 기능을 확인 중입니다.</div><p class="muted">현재 버전은 원본 영상 위 시간 연동 오버레이와 좌표 저장을 지원합니다. MP4 인코딩은 실험적 브라우저 동영상 저장을 지원합니다. 영상은 서버로 전송하지 않습니다.</p></section><footer class="muted">Safari에서는 파일 앱/사진 앱에서 영상을 선택할 수 있습니다. 영상 코덱이 브라우저에서 지원되지 않으면 MP4(H.264)로 변환한 후 사용하세요. 분석 중에는 화면을 켜 두세요.</footer></main><canvas id="scan" hidden></canvas><script>
 (()=>{'use strict';const $=id=>document.getElementById(id),v=$('video'),ov=$('overlay'),ctx=ov.getContext('2d'),scan=$('scan'),sc=scan.getContext('2d',{willReadFrequently:true});const colors={white:'#ffffff',yellow:'#ffdf36',red:'#ff4c4c'},names={white:'흰',yellow:'노란',red:'빨간'};let templates={},referenceFrame=null,sourceFPS=30,exporting=false,exportStop=null,previewMode=false,pointDraft=null;let zone=null,zoneEditing=false,dragCorner=-1,zoneConfirmed=false;let seeds={},tracks={white:[],yellow:[],red:[]},picking=null,working=false,stop=false,url=null,frameStep=1/30,analyzed=false;const keys=Object.keys(colors);const status=s=>$('status').textContent=s;const enable=()=>{let loaded=!!v.videoWidth;['play','back','forward','preview','white','yellow','red','autoZone','editZone','resetZone'].forEach(id=>$(id).disabled=!loaded);$('analyze').disabled=!loaded||working||keys.some(k=>!seeds[k]);$('seek').disabled=!loaded;['json','csv'].forEach(id=>$(id).disabled=!analyzed);$('export').disabled=!loaded||!analyzed||exporting;$('preview').disabled=!loaded||!analyzed||working};const fmt=t=>{t=Math.max(0,t||0);return `${String(Math.floor(t/60)).padStart(2,'0')}:${String(Math.floor(t%60)).padStart(2,'0')}.${String(Math.floor((t%1)*100)).padStart(2,'0')}`};const resize=()=>{if(!v.videoWidth)return;ov.width=v.videoWidth;ov.height=v.videoHeight;scan.width=Math.min(960,v.videoWidth);scan.height=Math.round(v.videoHeight*scan.width/v.videoWidth);draw()};function draw(){
@@ -45,7 +45,7 @@
  if(zone&&!exporting){ctx.save();ctx.globalAlpha=zoneEditing?.95:.5;ctx.strokeStyle='#5fffc3';ctx.lineWidth=Math.max(2,ov.width/500);ctx.setLineDash(zoneEditing?[]:[8,6]);ctx.beginPath();zone.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.closePath();ctx.stroke();ctx.setLineDash([]);if(zoneEditing)zone.forEach((p,i)=>{ctx.beginPath();ctx.arc(p.x,p.y,Math.max(9,ov.width*.012),0,Math.PI*2);ctx.fillStyle='#5fffc3';ctx.fill();ctx.fillStyle='#102b26';ctx.font=`bold ${Math.max(12,ov.width*.014)}px sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(i+1,p.x,p.y)});ctx.restore()}
  if(picking){ctx.fillStyle='#fff';ctx.font=`bold ${Math.max(14,ov.width*.018)}px sans-serif`;ctx.fillText(`${names[picking]} 공을 터치하세요`,15,30)}
 }
-$('file').onchange=e=>{const f=e.target.files[0];if(!f)return;if(url)URL.revokeObjectURL(url);url=URL.createObjectURL(f);v.pause();v.src=url;seeds={};templates={};referenceFrame=null;tracks={white:[],yellow:[],red:[]};analyzed=false;previewMode=false;pointDraft=null;$('preview').classList.remove('activePreview');$('preview').setAttribute('aria-pressed','false');$('magnifyPanel').classList.remove('active');picking=null;zone=null;zoneEditing=false;zoneConfirmed=false;ov.classList.remove('pick','zone');$('zoneStatus').textContent='영상을 불러왔습니다. 자동 추정을 눌러주세요.';$('seedInfo').textContent='공 3개를 영상 0초에서 지정하세요.';for(let [k,id] of [['white','wState'],['yellow','yState'],['red','rState']])$(id).textContent='미지정';status(`불러온 파일: ${f.name}\n영상을 멈추고 공 3개를 지정하세요.`);$('exportStatus').textContent='분석을 마친 뒤 동영상 저장을 시도할 수 있습니다.';enable()};v.onloadedmetadata=()=>{resize();$('dimensions').textContent=`${v.videoWidth} × ${v.videoHeight}`;updateFrameInfo();enable();draw()};v.onloadeddata=()=>{draw();if(!zone)autoZone()};v.ontimeupdate=()=>{if(!working){$('seek').value=Math.round(v.currentTime/v.duration*1000)||0;$('clock').textContent=`${fmt(v.currentTime)} / ${fmt(v.duration)}`;updateFrameInfo()}draw()};v.onplay=()=>{$('play').textContent='❚❚ 일시정지';loop()};v.onended=()=>{draw()};v.onseeked=()=>{if(!working)draw()};v.onpause=()=>{$('play').textContent='▶ 재생';draw()};function loop(){if(v.paused)return;draw();requestAnimationFrame(loop)}$('play').onclick=async()=>{if(v.paused){if(v.ended||v.currentTime>=v.duration-.04)await seek(0);await v.play()}else v.pause()};$('seek').oninput=e=>{if(!working)v.currentTime=(+e.target.value/1000)*v.duration};async function seek(t){if(!Number.isFinite(t))return;t=Math.max(0,Math.min(v.duration-.001,t));if(Math.abs(v.currentTime-t)<.0003){draw();return}await new Promise(resolve=>{let timer;const done=()=>{clearTimeout(timer);v.removeEventListener('seeked',done);resolve()};v.addEventListener('seeked',done,{once:true});timer=setTimeout(done,3000);v.currentTime=t});draw()};$('back').onclick=()=>seek(v.currentTime-1/sourceFPS);$('forward').onclick=()=>seek(v.currentTime+1/sourceFPS);$('speed').onchange=()=>v.playbackRate=Number($('speed').value);$('sourcefps').onchange=()=>{sourceFPS=Math.max(1,Math.min(240,Number($('sourcefps').value)||30));updateFrameInfo()};function updateFrameInfo(){if(!v.videoWidth)return;const total=Math.round(v.duration*sourceFPS),current=Math.min(total,Math.floor(v.currentTime*sourceFPS)+1);$('frameinfo').textContent=`FPS ${sourceFPS.toFixed(3)} (사용자 설정) · 현재 ${current}프레임`; $('framecount').textContent=`추정 총 ${total}프레임`};for(let k of keys)$(k).onclick=async()=>{v.pause();if(v.currentTime>.07)await seek(0);zoneEditing=false;ov.classList.remove('zone');picking=k;pointDraft=null;$('magnifyPanel').classList.remove('active');ov.classList.add('pick');status(`${names[k]} 공의 중심을 영상에서 터치하세요.`);draw()};const mg=$('magnifyCanvas'),mc=mg.getContext('2d');const zoom=5;function drawMagnifier(){if(!pointDraft)return;const p=pointDraft,span=mg.width/zoom;mc.fillStyle='#07120f';mc.fillRect(0,0,mg.width,mg.height);try{const left=Math.max(0,Math.min(v.videoWidth-span,p.anchorX-span/2)),top=Math.max(0,Math.min(v.videoHeight-span,p.anchorY-span/2));p.left=left;p.top=top;mc.drawImage(v,left,top,Math.min(span,v.videoWidth-left),Math.min(span,v.videoHeight-top),0,0,Math.min(span,v.videoWidth-left)*zoom,Math.min(span,v.videoHeight-top)*zoom)}catch(e){}const x=(p.x-p.left)*zoom,y=(p.y-p.top)*zoom;mc.strokeStyle='#00ffb5';mc.lineWidth=1.5;mc.beginPath();mc.moveTo(x-18,y);mc.lineTo(x+18,y);mc.moveTo(x,y-18);mc.lineTo(x,y+18);mc.stroke();mc.beginPath();mc.arc(x,y,7,0,Math.PI*2);mc.stroke();}ov.addEventListener('pointerdown',e=>{if(!picking)return;e.preventDefault();const r=ov.getBoundingClientRect(),x=(e.clientX-r.left)/r.width*ov.width,y=(e.clientY-r.top)/r.height*ov.height;pointDraft={x,y,anchorX:x,anchorY:y};$('magnifyPanel').classList.add('active');$('magnifyHint').textContent=`${names[picking]} 공: 확대된 화면에서 중심을 다시 터치해 미세 조정하세요.`;drawMagnifier();});mg.addEventListener('pointerdown',e=>{if(!pointDraft)return;e.preventDefault();const r=mg.getBoundingClientRect();pointDraft.x=Math.max(0,Math.min(ov.width,pointDraft.left+(e.clientX-r.left)/r.width*mg.width/zoom));pointDraft.y=Math.max(0,Math.min(ov.height,pointDraft.top+(e.clientY-r.top)/r.height*mg.height/zoom));drawMagnifier()});$('confirmPoint').onclick=()=>{if(!pointDraft||!picking)return;let selection={x:pointDraft.x,y:pointDraft.y,t:v.currentTime,ok:true,confidence:1};if(v.videoWidth&&v.readyState>=2){const ww=Math.min(960,v.videoWidth);scan.width=ww;scan.height=Math.max(1,Math.round(v.videoHeight*ww/v.videoWidth));try{sc.drawImage(v,0,0,scan.width,scan.height);const image=sc.getImageData(0,0,scan.width,scan.height);selection=picking==='red'?refineRedSeed(image,selection,v.videoWidth/scan.width,v.videoHeight/scan.height):refineSeed(image,selection,v.videoWidth/scan.width,v.videoHeight/scan.height)}catch(e){}}seeds[picking]=selection;$(({white:'wState',yellow:'yState',red:'rState'})[picking]).textContent=selection.refined?`중심 보정 · 지름 약 ${Math.round(selection.radius*2)}px`:'지정 완료 (수동 기준)';updateSeedInfo();picking=null;pointDraft=null;$('magnifyPanel').classList.remove('active');ov.classList.remove('pick');status('확대 지정 완료. 3개를 모두 지정한 뒤 분석하세요.');enable();draw()};$('cancelPoint').onclick=()=>{pointDraft=null;$('magnifyPanel').classList.remove('active');};// The polygon is a user-adjustable movement envelope, not a perspective transform.
+$('file').onchange=e=>{const f=e.target.files[0];if(!f)return;if(url)URL.revokeObjectURL(url);url=URL.createObjectURL(f);v.pause();v.src=url;seeds={};templates={};referenceFrame=null;tracks={white:[],yellow:[],red:[]};analyzed=false;previewMode=false;pointDraft=null;$('preview').classList.remove('activePreview');$('preview').setAttribute('aria-pressed','false');$('magnifyPanel').classList.remove('active');picking=null;zone=null;zoneEditing=false;zoneConfirmed=false;ov.classList.remove('pick','zone');$('zoneStatus').textContent='영상을 불러왔습니다. 자동 추정을 눌러주세요.';$('seedInfo').textContent='공 3개를 영상 0초에서 지정하세요.';for(let [k,id] of [['white','wState'],['yellow','yState'],['red','rState']])$(id).textContent='미지정';status(`불러온 파일: ${f.name}\n영상을 멈추고 공 3개를 지정하세요.`);$('exportStatus').textContent='분석을 마친 뒤 동영상 저장을 시도할 수 있습니다.';enable()};v.onloadedmetadata=()=>{resize();$('dimensions').textContent=`${v.videoWidth} × ${v.videoHeight}`;updateFrameInfo();enable();draw()};v.onloadeddata=()=>{draw();if(!zone)autoZone();for(const ms of [220,650])setTimeout(()=>{if(!zoneConfirmed&&!zoneEditing&&!working&&!picking&&v.videoWidth&&v.currentTime<.2)autoZone()},ms)};v.ontimeupdate=()=>{if(!working){$('seek').value=Math.round(v.currentTime/v.duration*1000)||0;$('clock').textContent=`${fmt(v.currentTime)} / ${fmt(v.duration)}`;updateFrameInfo()}draw()};v.onplay=()=>{$('play').textContent='❚❚ 일시정지';loop()};v.onended=()=>{draw()};v.onseeked=()=>{if(!working)draw()};v.onpause=()=>{$('play').textContent='▶ 재생';draw()};function loop(){if(v.paused)return;draw();requestAnimationFrame(loop)}$('play').onclick=async()=>{if(v.paused){if(v.ended||v.currentTime>=v.duration-.04)await seek(0);await v.play()}else v.pause()};$('seek').oninput=e=>{if(!working)v.currentTime=(+e.target.value/1000)*v.duration};async function seek(t){if(!Number.isFinite(t))return;t=Math.max(0,Math.min(v.duration-.001,t));if(Math.abs(v.currentTime-t)<.0003){draw();return}await new Promise(resolve=>{let timer;const done=()=>{clearTimeout(timer);v.removeEventListener('seeked',done);resolve()};v.addEventListener('seeked',done,{once:true});timer=setTimeout(done,3000);v.currentTime=t});draw()};$('back').onclick=()=>seek(v.currentTime-1/sourceFPS);$('forward').onclick=()=>seek(v.currentTime+1/sourceFPS);$('speed').onchange=()=>v.playbackRate=Number($('speed').value);$('sourcefps').onchange=()=>{sourceFPS=Math.max(1,Math.min(240,Number($('sourcefps').value)||30));updateFrameInfo()};function updateFrameInfo(){if(!v.videoWidth)return;const total=Math.round(v.duration*sourceFPS),current=Math.min(total,Math.floor(v.currentTime*sourceFPS)+1);$('frameinfo').textContent=`FPS ${sourceFPS.toFixed(3)} (사용자 설정) · 현재 ${current}프레임`; $('framecount').textContent=`추정 총 ${total}프레임`};for(let k of keys)$(k).onclick=async()=>{v.pause();if(v.currentTime>.07)await seek(0);zoneEditing=false;ov.classList.remove('zone');picking=k;pointDraft=null;$('magnifyPanel').classList.remove('active');ov.classList.add('pick');status(`${names[k]} 공의 중심을 영상에서 터치하세요.`);draw()};const mg=$('magnifyCanvas'),mc=mg.getContext('2d');const zoom=5;function drawMagnifier(){if(!pointDraft)return;const p=pointDraft,span=mg.width/zoom;mc.fillStyle='#07120f';mc.fillRect(0,0,mg.width,mg.height);try{const left=Math.max(0,Math.min(v.videoWidth-span,p.anchorX-span/2)),top=Math.max(0,Math.min(v.videoHeight-span,p.anchorY-span/2));p.left=left;p.top=top;mc.drawImage(v,left,top,Math.min(span,v.videoWidth-left),Math.min(span,v.videoHeight-top),0,0,Math.min(span,v.videoWidth-left)*zoom,Math.min(span,v.videoHeight-top)*zoom)}catch(e){}const x=(p.x-p.left)*zoom,y=(p.y-p.top)*zoom;mc.strokeStyle='#00ffb5';mc.lineWidth=1.5;mc.beginPath();mc.moveTo(x-18,y);mc.lineTo(x+18,y);mc.moveTo(x,y-18);mc.lineTo(x,y+18);mc.stroke();mc.beginPath();mc.arc(x,y,7,0,Math.PI*2);mc.stroke();}ov.addEventListener('pointerdown',e=>{if(!picking)return;e.preventDefault();const r=ov.getBoundingClientRect(),x=(e.clientX-r.left)/r.width*ov.width,y=(e.clientY-r.top)/r.height*ov.height;pointDraft={x,y,anchorX:x,anchorY:y};$('magnifyPanel').classList.add('active');$('magnifyHint').textContent=`${names[picking]} 공: 확대된 화면에서 중심을 다시 터치해 미세 조정하세요.`;drawMagnifier();});mg.addEventListener('pointerdown',e=>{if(!pointDraft)return;e.preventDefault();const r=mg.getBoundingClientRect();pointDraft.x=Math.max(0,Math.min(ov.width,pointDraft.left+(e.clientX-r.left)/r.width*mg.width/zoom));pointDraft.y=Math.max(0,Math.min(ov.height,pointDraft.top+(e.clientY-r.top)/r.height*mg.height/zoom));drawMagnifier()});$('confirmPoint').onclick=()=>{if(!pointDraft||!picking)return;let selection={x:pointDraft.x,y:pointDraft.y,t:v.currentTime,ok:true,confidence:1};if(v.videoWidth&&v.readyState>=2){const ww=Math.min(960,v.videoWidth);scan.width=ww;scan.height=Math.max(1,Math.round(v.videoHeight*ww/v.videoWidth));try{sc.drawImage(v,0,0,scan.width,scan.height);const image=sc.getImageData(0,0,scan.width,scan.height);selection=picking==='red'?refineRedSeed(image,selection,v.videoWidth/scan.width,v.videoHeight/scan.height):refineSeed(image,selection,v.videoWidth/scan.width,v.videoHeight/scan.height)}catch(e){}}seeds[picking]=selection;$(({white:'wState',yellow:'yState',red:'rState'})[picking]).textContent=selection.refined?`중심 보정 · 지름 약 ${Math.round(selection.radius*2)}px`:'지정 완료 (수동 기준)';updateSeedInfo();picking=null;pointDraft=null;$('magnifyPanel').classList.remove('active');ov.classList.remove('pick');status('확대 지정 완료. 3개를 모두 지정한 뒤 분석하세요.');enable();draw()};$('cancelPoint').onclick=()=>{pointDraft=null;$('magnifyPanel').classList.remove('active');};// The polygon is a user-adjustable movement envelope, not a perspective transform.
 function wholeZone(){zoneConfirmed=false;zone=[{x:0,y:0},{x:ov.width,y:0},{x:ov.width,y:ov.height},{x:0,y:ov.height}];draw()}
 function inside(x,y){if(!zone)return true;let yes=false;for(let i=0,j=zone.length-1;i<zone.length;j=i++){const a=zone[i],b=zone[j];if(((a.y>y)!==(b.y>y))&&(x<(b.x-a.x)*(y-a.y)/(b.y-a.y)+a.x))yes=!yes}return yes}
 // The user's manually adjusted four-corner envelope is a SEARCH BOUNDARY,
@@ -68,7 +68,118 @@ function zoneMargin(k){
  return Math.max(16,Math.min(34,(seeds[k]?.radius||7)*1.9));
 }
 function admissible(x,y,k){return !zoneConfirmed||distanceToZone(x,y)<=zoneMargin(k)}
-function autoZone(){if(!v.videoWidth)return;try{const w=320,h=Math.round(w*v.videoHeight/v.videoWidth);scan.width=w;scan.height=h;sc.drawImage(v,0,0,w,h);const data=sc.getImageData(0,0,w,h).data;let bins=new Map();for(let y=0;y<h;y+=3)for(let x=0;x<w;x+=3){let i=(y*w+x)*4,r=data[i],g=data[i+1],b=data[i+2];let max=Math.max(r,g,b),min=Math.min(r,g,b);if(max-min<25||max<45)continue;let key=[r>>5,g>>5,b>>5].join(',');bins.set(key,(bins.get(key)||0)+1)}let top=[...bins].sort((a,b)=>b[1]-a[1]).slice(0,5);let chosen=null;for(let [key] of top){let [r,g,b]=key.split(',').map(Number);if((g>=r&&g>=b)||(b>=r&&b>=g)){chosen=[r,g,b];break}}if(!chosen){wholeZone();$('zoneStatus').textContent='자동 추정 실패: 전체 화면으로 설정했습니다.';return}let pts=[];for(let y=0;y<h;y+=2)for(let x=0;x<w;x+=2){let i=(y*w+x)*4,r=data[i]>>5,g=data[i+1]>>5,b=data[i+2]>>5;if(Math.abs(r-chosen[0])<=1&&Math.abs(g-chosen[1])<=1&&Math.abs(b-chosen[2])<=1)pts.push({x,y})}if(pts.length<150){wholeZone();$('zoneStatus').textContent='테이블 색상 판별 실패: 전체 화면으로 설정했습니다.';return}let minx=Math.min(...pts.map(p=>p.x)),maxx=Math.max(...pts.map(p=>p.x)),miny=Math.min(...pts.map(p=>p.y)),maxy=Math.max(...pts.map(p=>p.y));if((maxx-minx)*(maxy-miny)<w*h*.15){wholeZone();$('zoneStatus').textContent='테이블 범위가 불명확해 전체 화면으로 설정했습니다.';return}let sx=ov.width/w,sy=ov.height/h;zone=[{x:minx*sx,y:miny*sy},{x:(maxx+2)*sx,y:miny*sy},{x:(maxx+2)*sx,y:(maxy+2)*sy},{x:minx*sx,y:(maxy+2)*sy}];$('zoneStatus').textContent='색상 기반으로 영역을 대략 추정했습니다. 꼭짓점을 드래그해 조정하세요. 영역 바깥의 다른 당구대는 추적에서 제외합니다.';draw()}catch(e){wholeZone();$('zoneStatus').textContent='자동 추정 오류: 전체 화면을 사용합니다.'}}
+// V0.17: find the largest CONNECTED, chromatically consistent felt patch.
+// Brightness is intentionally ignored for hue matching: uneven overhead lighting
+// changes value far more than hue. The table is a quadrilateral, not an RGB bbox.
+// This color envelope is ONLY a search region and never a cushion/reflector.
+function zoneHSV(r,g,b){
+ const mx=Math.max(r,g,b),mn=Math.min(r,g,b),c=mx-mn;
+ let hue=0;
+ if(c){if(mx===r)hue=60*((g-b)/c%6);else if(mx===g)hue=60*((b-r)/c+2);else hue=60*((r-g)/c+4)}
+ if(hue<0)hue+=360;
+ return [hue,c/(mx||1),mx/255];
+}
+function zoneMedian(values){if(!values.length)return 0;values.sort((a,b)=>a-b);return values[Math.floor(values.length/2)]}
+function zoneInfer(data,w,h){
+ const N=w*h,hh=new Float32Array(N),sat=new Float32Array(N),val=new Float32Array(N),hist=new Uint32Array(36);
+ for(let i=0;i<N;i++){
+  const z=i*4,hs=zoneHSV(data[z],data[z+1],data[z+2]);hh[i]=hs[0];sat[i]=hs[1];val[i]=hs[2];
+  if(hs[1]>.24&&hs[2]>.22)hist[Math.floor(hs[0]/10)%36]++;
+ }
+ const peaks=[];
+ for(let b=0;b<36;b++){
+  const weight=hist[(b+35)%36]+hist[b]+hist[(b+1)%36];
+  peaks.push({h:(b+.5)*10,n:weight});
+ }
+ peaks.sort((a,b)=>b.n-a.n);
+ const candidates=[];
+ for(const p of peaks){
+  if(candidates.some(v=>Math.min(Math.abs(v.h-p.h),360-Math.abs(v.h-p.h))<28))continue;
+  candidates.push(p);if(candidates.length>=5)break;
+ }
+ let winner=null;
+ for(const peak of candidates){
+  if(peak.n<N*.025)continue;
+  const mask=new Uint8Array(N);
+  for(let i=0;i<N;i++){
+   const dh=Math.abs(hh[i]-peak.h),delta=Math.min(dh,360-dh);
+   if(delta<22&&sat[i]>.20&&val[i]>.20)mask[i]=1;
+  }
+  // Close 1-pixel holes from compression artifacts and ball markings, keeping
+  // background-colored gaps between separate tables unconnected.
+  const visited=new Uint8Array(N),queue=new Int32Array(N);
+  for(let i=0;i<N;i++){
+   if(!mask[i]||visited[i])continue;
+   let head=0,tail=1;queue[0]=i;visited[i]=1;
+   let minx=w,maxx=0,miny=h,maxy=0;
+   const left=new Int16Array(h),right=new Int16Array(h),counts=new Int16Array(h);
+   left.fill(w);right.fill(-1);
+   while(head<tail){
+    const z=queue[head++],x=z%w,y=(z/w)|0;
+    if(x<minx)minx=x;if(x>maxx)maxx=x;if(y<miny)miny=y;if(y>maxy)maxy=y;
+    if(x<left[y])left[y]=x;if(x>right[y])right[y]=x;counts[y]++;
+    for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){
+     if(!dx&&!dy)continue;const xx=x+dx,yy=y+dy;
+     if(xx<0||yy<0||xx>=w||yy>=h)continue;
+     const k=yy*w+xx;if(mask[k]&&!visited[k]){visited[k]=1;queue[tail++]=k}
+    }
+   }
+   const boxW=maxx-minx+1,boxH=maxy-miny+1,area=tail;
+   if(area<N*.055||boxW<w*.17||boxH<h*.18)continue;
+   const fullness=area/(boxW*boxH),ratio=boxW/Math.max(1,boxH);
+   // Broad and contiguous, not a narrow colored sign, shirt, score overlay, etc.
+   if(fullness<.35||ratio<.27||ratio>5.7)continue;
+   const eligible=[];
+   for(let y=miny;y<=maxy;y++){
+    const span=right[y]-left[y]+1;
+    if(span>=boxW*.18&&counts[y]>=span*.36)eligible.push(y);
+   }
+   if(eligible.length<boxH*.42)continue;
+   const yTop=eligible[0],yBottom=eligible[eligible.length-1];
+   if(yBottom-yTop<h*.17)continue;
+   function borderAt(side,yTarget){
+    const rows=eligible.filter(y=>Math.abs(y-yTarget)<(yBottom-yTop)*.18+2);
+    if(!rows.length)return side==='left'?minx:maxx;
+    const xs=rows.map(y=>side==='left'?left[y]:right[y]);
+    const med=zoneMedian(xs.slice());
+    // Fit boundary using the nearby rows: correct perspective taper while
+    // ignoring occlusion outliers (e.g., a player's arm across one corner).
+    let sx=0,sy=0,sxx=0,sxy=0,n=0;
+    for(const y of rows){const x=side==='left'?left[y]:right[y];if(Math.abs(x-med)>boxW*.16)continue;
+      sx+=y;sy+=x;sxx+=y*y;sxy+=x*y;n++}
+    if(n<3)return med;
+    const slope=(n*sxy-sx*sy)/(n*sxx-sx*sx||1);
+    return Math.max(minx-3,Math.min(maxx+3,sy/n+slope*(yTarget-sx/n)));
+   }
+   const quad=[{x:borderAt('left',yTop),y:yTop},{x:borderAt('right',yTop),y:yTop},
+      {x:borderAt('right',yBottom),y:yBottom},{x:borderAt('left',yBottom),y:yBottom}];
+   const topWidth=quad[1].x-quad[0].x,botWidth=quad[2].x-quad[3].x;
+   const quadArea=(topWidth+botWidth)*.5*(yBottom-yTop);
+   if(Math.min(topWidth,botWidth)<w*.1||quadArea<N*.08)continue;
+   const score=area*(.8+.2*fullness)*Math.max(.75,Math.min(1.15,quadArea/area));
+   if(!winner||score>winner.score)winner={quad,score,area,coverage:area/N,hue:peak.h,fullness};
+  }
+ }
+ return winner;
+}
+function autoZone(){
+ if(!v.videoWidth)return;
+ try{
+  const w=360,h=Math.max(1,Math.round(w*v.videoHeight/v.videoWidth));
+  scan.width=w;scan.height=h;sc.drawImage(v,0,0,w,h);
+  const result=zoneInfer(sc.getImageData(0,0,w,h).data,w,h);
+  if(!result){wholeZone();$('zoneStatus').textContent='색상 영역을 신뢰할 수 없어 전체 화면으로 설정했습니다. 꼭짓점을 직접 지정해 주세요.';return}
+  const sx=ov.width/w,sy=ov.height/h;
+  // Tiny expansion absorbs imperfect felt segmentation and corner estimation;
+  // the tracking margin is applied separately in admissible().
+  const cx=result.quad.reduce((a,p)=>a+p.x,0)/4,cy=result.quad.reduce((a,p)=>a+p.y,0)/4;
+  zone=result.quad.map(p=>({x:Math.max(0,Math.min(ov.width,(p.x+(p.x-cx)*.035)*sx)),
+                          y:Math.max(0,Math.min(ov.height,(p.y+(p.y-cy)*.035)*sy))}));
+  zoneConfirmed=true;zoneEditing=false;ov.classList.remove('zone');$('editZone').textContent='✥ 꼭짓점 드래그';
+  $('zoneStatus').textContent=`✓ 가장 큰 연결 색상 영역 자동 적용 (영상의 약 ${Math.round(result.coverage*100)}%). 꼭짓점을 드래그해 미세 조정할 수 있습니다. 이 선은 정확한 쿠션 경계가 아닙니다.`;
+  draw();
+ }catch(e){wholeZone();$('zoneStatus').textContent='자동 추정 오류: 전체 화면을 사용합니다. '+e.message}
+}
 $('autoZone').onclick=()=>{v.pause();autoZone()};$('editZone').onclick=()=>{if(!zone)wholeZone();v.pause();picking=null;ov.classList.remove('pick');zoneEditing=!zoneEditing;ov.classList.toggle('zone',zoneEditing);$('editZone').textContent=zoneEditing?'✓ 영역 편집 완료':'✥ 꼭짓점 드래그';if(!zoneEditing){zoneConfirmed=true;$('zoneStatus').textContent='✓ 편집 영역 적용 중 — 영역 밖 다른 당구대 후보는 제외하고, 경계의 오차는 여유 있게 허용합니다.';}draw()};$('resetZone').onclick=()=>{wholeZone();$('zoneStatus').textContent='전체 영상으로 초기화했습니다. 다른 당구대를 제외하려면 꼭짓점을 다시 지정하세요.'};
 function pointerXY(e){let r=ov.getBoundingClientRect();return {x:(e.clientX-r.left)/r.width*ov.width,y:(e.clientY-r.top)/r.height*ov.height}}
 ov.addEventListener('pointerdown',e=>{if(!zoneEditing||!zone)return;const p=pointerXY(e);let distances=zone.map(q=>Math.hypot(q.x-p.x,q.y-p.y)),index=distances.indexOf(Math.min(...distances));if(distances[index]>Math.max(35,ov.width*.09))return;dragCorner=index;ov.setPointerCapture(e.pointerId);e.preventDefault()});ov.addEventListener('pointermove',e=>{if(!zoneEditing||dragCorner<0)return;const p=pointerXY(e);zone[dragCorner]={x:Math.max(0,Math.min(ov.width,p.x)),y:Math.max(0,Math.min(ov.height,p.y))};draw();e.preventDefault()});for(let ev of ['pointerup','pointercancel'])ov.addEventListener(ev,()=>dragCorner=-1);
@@ -231,6 +342,59 @@ function detect(img,k,prev,prevprev,sx,sy,lostCount,otherPositions,dt=1/30){
  return bestScore>6?best:null;
 }
 
+// V0.17: red ball identity recovery. Never trust a distant red pixel blob
+// without motion consistency, felt support, and TWO consecutive detections.
+function searchRedGlobal(img,otherPositions){
+ const W=img.width,H=img.height,d=img.data,T=templates.red;
+ if(!T)return null;
+ const step=2,mw=Math.ceil(W/step),mh=Math.ceil(H/step),mask=new Uint8Array(mw*mh);
+ const radius=Math.max(2.8,T.radius);
+ for(let yy=1;yy<mh-1;yy++)for(let xx=1;xx<mw-1;xx++){
+  const x=xx*step,y=yy*step;if(!admissible(x*v.videoWidth/W,y*v.videoHeight/H,'red'))continue;
+  const i=(y*W+x)*4,redness=redBodyWeight(d[i],d[i+1],d[i+2]);
+  if(redness<.24)continue;
+  const c=ballColor(d[i],d[i+1],d[i+2]);
+  const deviation=Math.hypot(c[0]-T.c[0],c[1]-T.c[1],c[2]-T.c[2]);
+  if(deviation<Math.max(.12,T.tol*1.45))mask[yy*mw+xx]=1;
+ }
+ const visited=new Uint8Array(mask.length),queue=new Int32Array(mask.length);
+ let best=null,bestScore=-1e9;
+ for(let z=0;z<mask.length;z++){
+  if(!mask[z]||visited[z])continue;
+  let head=0,tail=1;queue[0]=z;visited[z]=1;
+  let count=0,sumx=0,sumy=0,sumxx=0,sumyy=0,sumxy=0,minx=mw,maxx=0,miny=mh,maxy=0;
+  while(head<tail&&tail<4000){
+   const k=queue[head++],x=k%mw,y=(k/mw)|0;
+   count++;sumx+=x;sumy+=y;sumxx+=x*x;sumyy+=y*y;sumxy+=x*y;
+   minx=Math.min(minx,x);maxx=Math.max(maxx,x);miny=Math.min(miny,y);maxy=Math.max(maxy,y);
+   for(const n of [k-1,k+1,k-mw,k+mw]){
+    if(n<0||n>=mask.length||visited[n]||!mask[n])continue;
+    if(Math.abs(n%mw-x)>1)continue;visited[n]=1;queue[tail++]=n;
+   }
+  }
+  const bw=(maxx-minx+1)*step,bh=(maxy-miny+1)*step,diam=Math.max(bw,bh),area=count*step*step;
+  if(count<3||tail>=4000||diam>radius*4.8||diam<radius*.65||area<Math.PI*radius*radius*.12||area>Math.PI*radius*radius*4.2)continue;
+  const ux=sumx/count,uy=sumy/count,x=ux*step,y=uy*step;
+  if(otherPositions.some(p=>p&&Math.hypot(x-p.x*W/v.videoWidth,y-p.y*H/v.videoHeight)<radius*1.5))continue;
+  const cx=sumxx/count-ux*ux,cy=sumyy/count-uy*uy,cxy=sumxy/count-ux*uy;
+  const ev=(cx+cy)/2,dd=Math.sqrt(Math.max(0,(cx-cy)**2/4+cxy*cxy));
+  const aspect=Math.sqrt((ev+dd+.15)/(Math.max(0,ev-dd)+.15));
+  if(aspect>3.15)continue;
+  let cloth=0;
+  for(let j=0;j<12;j++){
+   const a=j*Math.PI/6,fx=x+radius*1.6*Math.cos(a),fy=y+radius*1.6*Math.sin(a);
+   cloth+=feltPixel(img,fx,fy,T)>.3?1:0;
+  }
+  if(cloth<3)continue;
+  const movedFromSeed=Math.hypot(x-seeds.red.x*W/v.videoWidth,y-seeds.red.y*H/v.videoHeight);
+  if(movedFromSeed>radius*2.2&&changedSinceStart(img,x,y,radius)<.085)continue;
+  const scaleDifference=Math.abs(Math.log((area+1)/(Math.PI*radius*radius*.70+1)));
+  const score=(cloth/12)*2.2+Math.min(1,count/Math.max(1,Math.PI*radius*radius/5))*.9-aspect*.35-scaleDifference*.30;
+  if(score>bestScore){bestScore=score;best={x:x*v.videoWidth/W,y:y*v.videoHeight/H,ok:true,
+    confidence:clamp(.53+score*.15,0,.91),method:'red-global',shapeRatio:aspect};}
+ }
+ return bestScore>.10?best:null;
+}
 // V0.12: A cue and ball can belong to the SAME white connected component.
 // Independently score ball-sized discs instead of rejecting that entire component.
 // The background is sampled around each disc; cloth support and compactness help
@@ -628,9 +792,14 @@ status(`초기 공 중심/지름 보정 완료. 실제 ${Math.round(1/frameStep)
  if(i===0){tracks[k].push({...seeds[k],t:0,ok:true,confidence:1,origin:'seed'});continue}
  let others=keys.filter(o=>o!==k).map(o=>last[o]);
  let found=k==='white'?findWhite(img,last[k],lost[k]?null:previous[k],sx,sy,lost[k],others,frameStep):k==='yellow'?findYellow(img,last[k],lost[k]?null:previous[k],sx,sy,lost[k],others,frameStep):detect(img,k,last[k],lost[k]?null:previous[k],sx,sy,lost[k],others,frameStep);
+ if(k==='red'&&!found&&lost[k]>=2&&lost[k]%2===0)found=searchRedGlobal(img,others);
  // When the ball reappears far away, the first global hit is a hypothesis.
  // Search around that hypothesis next frame so it can be confirmed even if
  // the last trusted ball position is still far behind.
+ if(k==='red'&&pending.red&&lost.red>0){
+  const probe=searchRedGlobal(img,others);
+  if(probe&&Math.hypot(probe.x-pending.red.x,probe.y-pending.red.y)<Math.max(35,v.videoWidth*.06))found=probe;
+ }
  if((k==='white'||k==='yellow')&&pending[k]&&lost[k]>0){
   const probe=k==='white'?searchWhiteDisc(img,pending[k],null,sx,sy,0,templates.white,others):searchYellowDisc(img,pending[k],null,sx,sy,0,others);
   if(probe&&Math.hypot(probe.x-pending[k].x,probe.y-pending[k].y)<Math.max(35,v.videoWidth*.05))found=probe;
@@ -644,7 +813,7 @@ status(`초기 공 중심/지름 보정 완료. 실제 ${Math.round(1/frameStep)
  // after occlusion must be observed AGAIN before granting the old ball ID.
  const jump=Math.hypot(found.x-last[k].x,found.y-last[k].y),gap=t-lastDetectedTime[k];
  const safeJump=Math.max(45,v.videoWidth*.085)*(1+Math.min(2,lost[k]*.3));
- const needsConfirm=(k==='white'||k==='yellow')&&(!!pending[k]||found.method==='disc-global'||found.method==='yellow-global'||lost[k]>=3||(lost[k]>1&&jump>safeJump));
+ const needsConfirm=!!pending[k]||found.method==='disc-global'||found.method==='yellow-global'||found.method==='red-global'||lost[k]>=3||(lost[k]>1&&jump>safeJump)||(k==='red'&&jump>safeJump*1.65);
  if(needsConfirm){
   const q=pending[k],nearPending=q&&t-q.time<.3&&Math.hypot(q.x-found.x,q.y-found.y)<Math.max(35,v.videoWidth*.07);
   pending[k]=nearPending?{...found,count:q.count+1,time:t}:{...found,count:1,time:t};
@@ -653,10 +822,9 @@ status(`초기 공 중심/지름 보정 완료. 실제 ${Math.round(1/frameStep)
   // fabricate its line. A re-acquired track starts a separate segment.
   found.reacquired=true;recoveries[k]++;pending[k]=null;
  }else pending[k]=null;
- if(k==='red'&&gap>.35&&jump>Math.max(105,v.videoWidth*.13)){
-  lost[k]++;tracks[k].push({x:last[k].x,y:last[k].y,t,ok:false});continue;
- }
- previous[k]=lost[k]?null:last[k];last[k]={...found,t};if((k==='white'||k==='yellow')&&Math.hypot(found.x-seeds[k].x,found.y-seeds[k].y)>Math.max(34,(seeds[k].radius||8)*2.8))launched[k]=true;lastDetectedTime[k]=t;lost[k]=0;tracks[k].push({...found,t})}else{if(pending[k]&&t-pending[k].time>.27)pending[k]=null;lost[k]++;tracks[k].push({x:last[k].x,y:last[k].y,t,ok:false});if(lost[k]>2)previous[k]=null}}}catch(err){status('프레임 분석 오류: '+err.message);stop=true;break}if(i%5===0){$('progress').value=Math.round(i/steps*100);status(`분석 중 ${Math.round(i/steps*100)}% · ${i+1}/${steps+1} 프레임`);await new Promise(r=>setTimeout(r,0))}}const repairStats=stop?{points:0,gaps:0}:await recoverYellowMotionGaps();validateTracks();const stabilized=stabilizeTracks();working=false;analyzed=keys.some(k=>tracks[k].some(p=>p.ok));$('progress').value=100;$('cancel').disabled=true;previewMode=analyzed;$('full').checked=false;$('preview').textContent=previewMode?'◉ 궤적 표시 중':'◎ 궤적 영상 보기';$('preview').classList.toggle('activePreview',previewMode);$('preview').setAttribute('aria-pressed',String(previewMode));enable();await seek(oldTime);status(`${stop?'중단됨':'분석 완료'} · 흰 공 ${tracks.white.filter(p=>p.ok).length}개 (재탐색 ${recoveries.white}회) / 노란 공 ${tracks.yellow.filter(p=>p.ok).length}개 (재탐색 ${recoveries.yellow}회) / 빨간 공 ${tracks.red.filter(p=>p.ok).length}개 위치 검출\n추적 결과를 재생하며 확인하세요. 검출 궤적은 실선, 신뢰 가능한 양끝 검출 사이의 짧은 누락 구간만 점선입니다. 경계선으로 궤적을 연장하지 않습니다. 노란 공 실제 영상 재검출: ${repairStats.points}프레임 (${repairStats.gaps}구간). 미세 보정: 흰 ${stabilized.white} / 노란 ${stabilized.yellow} / 빨간 ${stabilized.red} 프레임 (표시 좌표만 변경).`);draw()};$('cancel').onclick=()=>{stop=true;status('중단 요청 중…')};$('clear').onclick=()=>{tracks={white:[],yellow:[],red:[]};analyzed=false;previewMode=false;$('preview').textContent='◎ 궤적 영상 보기';$('preview').classList.remove('activePreview');enable();draw();status('궤적을 초기화했습니다. 공의 초기 지정은 유지됩니다.')};function save(name,data,type){const blob=new Blob([data],{type}),u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),10000)}$('json').onclick=()=>save('carom_tracks.json',JSON.stringify({version:'0.16',video:{width:v.videoWidth,height:v.videoHeight,duration:v.duration},frameStep,zone,templates,tracks},null,2),'application/json');$('csv').onclick=()=>{let rows=['ball,time_sec,x_px,y_px,detected,display_x_px,display_y_px'];for(let k of keys)for(let p of tracks[k])rows.push(`${k},${p.t.toFixed(4)},${p.x.toFixed(2)},${p.y.toFixed(2)},${p.ok?1:0},${(p.drawX??p.x).toFixed(2)},${(p.drawY??p.y).toFixed(2)}`);save('carom_tracks.csv',rows.join('\n'),'text/csv')};// Export by recording a composited canvas stream in real time. No fake MP4 extension.
+ // Reconfirmed red recovery is accepted as a NEW segment: never join a
+ // gap with an invented line, and never use the polygon as a bounce point.
+ previous[k]=lost[k]?null:last[k];last[k]={...found,t};if((k==='white'||k==='yellow')&&Math.hypot(found.x-seeds[k].x,found.y-seeds[k].y)>Math.max(34,(seeds[k].radius||8)*2.8))launched[k]=true;lastDetectedTime[k]=t;lost[k]=0;tracks[k].push({...found,t})}else{if(pending[k]&&t-pending[k].time>.27)pending[k]=null;lost[k]++;tracks[k].push({x:last[k].x,y:last[k].y,t,ok:false});if(lost[k]>2)previous[k]=null}}}catch(err){status('프레임 분석 오류: '+err.message);stop=true;break}if(i%5===0){$('progress').value=Math.round(i/steps*100);status(`분석 중 ${Math.round(i/steps*100)}% · ${i+1}/${steps+1} 프레임`);await new Promise(r=>setTimeout(r,0))}}const repairStats=stop?{points:0,gaps:0}:await recoverYellowMotionGaps();validateTracks();const stabilized=stabilizeTracks();working=false;analyzed=keys.some(k=>tracks[k].some(p=>p.ok));$('progress').value=100;$('cancel').disabled=true;previewMode=analyzed;$('full').checked=false;$('preview').textContent=previewMode?'◉ 궤적 표시 중':'◎ 궤적 영상 보기';$('preview').classList.toggle('activePreview',previewMode);$('preview').setAttribute('aria-pressed',String(previewMode));enable();await seek(oldTime);status(`${stop?'중단됨':'분석 완료'} · 흰 공 ${tracks.white.filter(p=>p.ok).length}개 (재탐색 ${recoveries.white}회) / 노란 공 ${tracks.yellow.filter(p=>p.ok).length}개 (재탐색 ${recoveries.yellow}회) / 빨간 공 ${tracks.red.filter(p=>p.ok).length}개 위치 검출\n추적 결과를 재생하며 확인하세요. 검출 궤적은 실선, 신뢰 가능한 양끝 검출 사이의 짧은 누락 구간만 점선입니다. 경계선으로 궤적을 연장하지 않습니다. 노란 공 실제 영상 재검출: ${repairStats.points}프레임 (${repairStats.gaps}구간). 미세 보정: 흰 ${stabilized.white} / 노란 ${stabilized.yellow} / 빨간 ${stabilized.red} 프레임 (표시 좌표만 변경).`);draw()};$('cancel').onclick=()=>{stop=true;status('중단 요청 중…')};$('clear').onclick=()=>{tracks={white:[],yellow:[],red:[]};analyzed=false;previewMode=false;$('preview').textContent='◎ 궤적 영상 보기';$('preview').classList.remove('activePreview');enable();draw();status('궤적을 초기화했습니다. 공의 초기 지정은 유지됩니다.')};function save(name,data,type){const blob=new Blob([data],{type}),u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),10000)}$('json').onclick=()=>save('carom_tracks.json',JSON.stringify({version:'0.17',video:{width:v.videoWidth,height:v.videoHeight,duration:v.duration},frameStep,zone,templates,tracks},null,2),'application/json');$('csv').onclick=()=>{let rows=['ball,time_sec,x_px,y_px,detected,display_x_px,display_y_px'];for(let k of keys)for(let p of tracks[k])rows.push(`${k},${p.t.toFixed(4)},${p.x.toFixed(2)},${p.y.toFixed(2)},${p.ok?1:0},${(p.drawX??p.x).toFixed(2)},${(p.drawY??p.y).toFixed(2)}`);save('carom_tracks.csv',rows.join('\n'),'text/csv')};// Export by recording a composited canvas stream in real time. No fake MP4 extension.
 const mimeCandidates=['video/mp4;codecs="avc1.42E01E"','video/mp4','video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm'];
 $('export').onclick=async()=>{
  if(exporting||!analyzed)return;
