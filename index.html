@@ -1,4 +1,4 @@
-<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#102b26"><title>Archibald Carom Tracker · V0.22</title><style>
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#102b26"><title>Archibald Carom Tracker · V1.02</title><style>
 :root{color-scheme:dark;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0c1e1a;color:#f4f6f2}*{box-sizing:border-box}body{margin:0;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}main{max-width:900px;margin:auto;padding:15px}header{display:flex;align-items:center;justify-content:space-between;margin:4px 0 14px}h1{font-size:21px;margin:0}small,.hint{color:#aabdb5}small{font-size:12px}.panel{background:#16332c;border:1px solid #2b5145;border-radius:15px;padding:13px;margin-bottom:12px}.stage{position:relative;background:#07120f;border-radius:10px;overflow:hidden;line-height:0;touch-action:manipulation}video{display:block;width:100%;height:auto;max-height:65vh;background:#07120f}canvas#overlay{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}canvas#overlay.pick,canvas#overlay.zone{pointer-events:auto;touch-action:none}.controls{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}button,.filebtn,select{background:#275746;border:1px solid #467b66;color:white;border-radius:10px;padding:11px 13px;font-size:14px;font-weight:600;cursor:pointer}button:disabled{opacity:.35}button.primary,.filebtn{background:#3b8467}.filebtn input{display:none}.row{display:flex;gap:12px;align-items:center;justify-content:space-between;margin:11px 0;flex-wrap:wrap}.row label{font-size:14px}input[type=range]{accent-color:#77dfac;max-width:190px;width:44vw}#seek{width:100%;max-width:none}.chips{display:flex;gap:7px;flex-wrap:wrap}.chip{border:1px solid #547365;border-radius:8px;padding:8px 10px;font-size:13px}.dot{display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:middle;margin-right:5px}.status{font-size:13px;line-height:1.5;color:#c9ddd4;white-space:pre-wrap}.muted{color:#a4b6ad;font-size:12px;line-height:1.6}progress{width:100%;accent-color:#7ee5b4}a{color:#9eecc7}.separator{height:1px;background:#345648;margin:12px 0}#magnifyPanel{display:none;margin:10px 0;padding:12px;border:1px solid #4e987c;border-radius:12px;background:#102820}#magnifyPanel.active{display:block}#magnifyCanvas{display:block;width:min(100%,320px);height:auto;aspect-ratio:1;background:#07120f;margin:10px auto;touch-action:none;border:1px solid #71bb9d;border-radius:8px}#magnifyPanel .controls{justify-content:center}#magnifyHint{font-size:13px;line-height:1.5;color:#d8e7e0}.activePreview{background:#327b60!important;border-color:#a0e9bc!important}.frame-nav{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.frame-nav button{padding:9px 10px;min-height:40px;font-size:13px}@media(max-width:480px){.frame-nav{width:100%;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}.frame-nav button{font-size:11px;padding:9px 3px}}
 /* V0.19 — one ball per row; calibration feedback beside its selector. */
 .ball-rows{display:grid;grid-template-columns:minmax(0,1fr);gap:5px;margin:8px 0 3px}
@@ -16,7 +16,7 @@
 .frame-nav .frame-step-actions button{flex:0 0 auto;min-width:0;min-height:40px;padding:9px 9px;font-size:14px;font-weight:600;white-space:nowrap}
 .frame-nav .frame-step-label{flex:0 0 auto;margin-left:auto}
 @media(max-width:480px){.frame-nav{display:flex;grid-template-columns:none;gap:5px}.frame-step-actions{gap:4px}.frame-nav .frame-step-actions button{font-size:14px;padding:9px 6px}.frame-nav .frame-step-label{font-size:11px}.frame-nav .frame-step-label input{width:47px}}
-</style></head><body><main><header><div><h1>◉ Archibald Carom Tracker</h1><small>모바일 · 브라우저 내 처리 · 수동 모드 · V0.23</small></div><small>3-CUSHION</small></header>
+</style></head><body><main><header><div><h1>◉ Archibald Carom Tracker</h1><small>모바일 · 브라우저 내 처리 · 수동 모드 · V1.02</small></div><small>3-CUSHION</small></header>
 <section class="panel"><div class="controls"><label class="filebtn">📁 불러오기<input id="file" type="file" accept="video/*"></label><button id="play" disabled>▶ 재생</button><button id="preview" disabled aria-pressed="false">◎ 트래킹 라인 보기</button><div class="frame-nav" aria-label="프레임 이동"><div class="frame-step-actions"><button id="back" disabled>◀ 3프레임</button><button id="forward" disabled>3프레임 ▶</button></div><label class="frame-step-label" for="frameMoveCount">이동값 <input id="frameMoveCount" type="number" inputmode="numeric" min="1" max="300" step="1" value="3" aria-label="프레임 이동값"></label></div></div><div class="stage" id="stage"><video id="video" playsinline webkit-playsinline preload="auto"></video><canvas id="overlay"></canvas></div><div id="magnifyPanel"><b>🔎 공 중심 확대 지정</b><p id="magnifyHint">확대 화면에서 공의 정확한 중심을 터치한 다음 확정하세요.</p><canvas id="magnifyCanvas" width="320" height="320"></canvas><div class="controls"><button id="confirmPoint">✓ 중심 확정</button><button id="cancelPoint">취소</button></div></div><input id="seek" type="range" min="0" max="1000" value="0" disabled><div class="row"><small id="clock">00:00.00 / 00:00.00</small><small id="dimensions">동영상을 선택하세요</small></div><div class="row"><label>재생 속도 <select id="speed"><option value="0.25">0.25×</option><option value="0.5">0.5×</option><option value="0.75">0.75×</option><option value="1" selected>1×</option><option value="1.5">1.5×</option><option value="2">2×</option></select></label><small id="frameinfo">FPS: 분석 대기</small></div><div class="row"><label>원본 FPS (수동 입력, 기본 30) <input id="sourcefps" type="number" min="1" max="240" step="0.001" value="30" style="width:88px;background:#275746;color:white;border:1px solid #467b66;border-radius:8px;padding:8px"></label><small id="framecount">총 프레임: -</small></div></section>
 <section class="panel"><b>① 당구대 영역 설정</b><p class="muted">자동 인식 성공 시 곧바로 탐색 영역에 적용하며, 네 꼭짓점을 다시 끌어 조정할 수 있습니다. 실패 시 전체 영상이 기본 영역입니다.</p><div class="controls zone-buttons"><button id="autoZone" disabled>▱ 자동 추정</button><button id="editZone" disabled>✥ 꼭짓점 드래그</button><button id="resetZone" disabled>초기화</button></div><div class="status" id="zoneStatus">영상 선택 후 자동 추정할 수 있습니다.</div></section>
 <section class="panel"><b>② 공 중심 설정</b><div class="ball-rows" role="group" aria-label="공 3개 중심 지정 및 보정 결과">
@@ -24,49 +24,86 @@
 <div class="ball-row"><button id="yellow" disabled>🟡 노란 공 지정</button><div class="ball-result" aria-live="polite"><span class="ball-state" id="yState">중심 미지정 · 지름 —</span><span class="ball-coord" id="yCoord">좌표 —</span></div></div>
 <div class="ball-row"><button id="red" disabled>🔴 빨간 공 지정</button><div class="ball-result" aria-live="polite"><span class="ball-state" id="rState">중심 미지정 · 지름 —</span><span class="ball-coord" id="rCoord">좌표 —</span></div></div>
 </div><div class="separator"></div><b>③ 자동 분석</b><div class="row"><label>분석 간격</label><select id="fps"><option value="10">초당 10프레임 (빠름)</option><option value="15">초당 15프레임</option><option value="30" selected>초당 30프레임</option><option value="60">초당 60프레임 (빠른 공)</option><option value="90">초당 90프레임</option><option value="120">초당 120프레임 (고속 촬영)</option></select></div><p class="muted">원본 FPS보다 높은 분석 간격은 새로운 프레임을 만들지 않습니다. 60fps 이상 촬영 영상에서 높은 값을 선택하세요.</p><div class="controls"><button class="primary" id="analyze" disabled>◎ 전체 영상 분석</button><button id="cancel" disabled>중지</button><button id="clear" disabled>궤적 초기화</button></div><progress id="progress" value="0" max="100" hidden></progress><div class="status" id="status">영상을 선택하면 시작할 수 있습니다.</div></section>
-<section class="panel"><b>④ 트래킹 라인 옵션</b><div class="row"><label>불투명도 <span id="alphaText">60%</span></label><input id="alpha" type="range" min="10" max="100" value="60"></div><div class="row"><label>선 두께 <span id="widthText">6px</span></label><input id="thick" type="range" min="1" max="12" value="6"></div><div class="row"><label><input id="full" type="checkbox"> 전체 궤적 고정 표시 (기본 해제 · 시간에 따른 표시를 원하면 끄기)</label><label><input id="gaps" type="checkbox" checked> 누락 구간 보간 표시 (양쪽 실제 검출 확인 시에만 점선)</label><label><input id="stabilize" type="checkbox" checked> 궤적 미세 흔들림·작은 삼각형 보정 (검출 좌표는 그대로 보존)</label></div><div class="row"><label for="traceStyle">궤적 표시 형태</label><select id="traceStyle"><option value="line" selected>연속된 선만 표시 · 추적점 없음</option><option value="current">선 + 현재 공 위치</option><option value="all">선 + 프레임별 추적점</option></select></div><div class="controls"><button id="json" disabled>좌표 JSON 저장</button><button id="csv" disabled>좌표 CSV 저장</button></div><div class="separator"></div><b>⑤ 영상 다운로드(실험적/음성제외)</b><p class="muted">원본 영상과 현재 궤적을 합성해 녹화합니다. 당구대 영역 점선은 저장 영상에 넣지 않습니다.</p><div class="controls"><button id="export" disabled>🎬 궤적 영상 저장</button><button id="stopExport" disabled>녹화 중지</button></div><div class="status" id="exportStatus">영상 저장 기능을 확인 중입니다.</div><p class="muted">현재 버전은 원본 영상 위 시간 연동 오버레이와 좌표 저장을 지원합니다.</p></section><footer class="muted">Safari에서는 파일 앱/사진 앱에서 영상을 선택할 수 있습니다. 영상 코덱이 브라우저에서 지원되지 않으면 MP4(H.264)로 변환한 후 사용하세요. 분석 중에는 화면을 켜 두세요.</footer></main><canvas id="scan" hidden></canvas><script>
+<section class="panel"><b>④ 트래킹 라인 옵션</b><div class="row"><label>불투명도 <span id="alphaText">60%</span></label><input id="alpha" type="range" min="10" max="100" value="60"></div><div class="row"><label>선 두께 <span id="widthText">6px</span></label><input id="thick" type="range" min="1" max="12" value="6"></div><div class="row"><label><input id="full" type="checkbox"> 전체 궤적 고정 표시 (기본 해제 · 시간에 따른 표시를 원하면 끄기)</label><label><input id="gaps" type="checkbox" checked> 누락 구간 부드러운 연결 (검출 확인 시 낮은 불투명도의 실선)</label><label><input id="stabilize" type="checkbox" checked> 궤적 미세 흔들림·작은 삼각형 보정 (검출 좌표는 그대로 보존)</label></div><div class="row"><label for="smoothLevel">궤적 부드러움 <span id="smoothLevelText">레벨 0 · 기본</span></label><select id="smoothLevel" aria-label="궤적 부드러움 단계"><option value="0" selected>0 · 기본 (현재 궤적 그대로)</option><option value="1">1 · 미세한 흔들림 완화</option><option value="2">2 · 방송형 자연스러운 곡선</option><option value="3">3 · 강한 시각적 보정</option></select></div><p class="muted">원본 검출 좌표는 그대로 보존합니다. 레벨 1~3은 실제 충돌 방향을 보존하며 충돌 직후의 단발성 검출 중심 오류도 검사합니다. 표시 선에만 적용됩니다.</p><div class="row"><label for="traceStyle">궤적 표시 형태</label><select id="traceStyle"><option value="line" selected>연속된 선만 표시 · 추적점 없음</option><option value="current">선 + 현재 공 위치</option><option value="all">선 + 프레임별 추적점</option></select></div><div class="controls"><button id="json" disabled>좌표 JSON 저장</button><button id="csv" disabled>좌표 CSV 저장</button></div><div class="separator"></div><b>⑤ 영상 다운로드(실험적/음성제외)</b><p class="muted">원본 영상과 현재 궤적을 합성해 녹화합니다. 당구대 영역 점선은 저장 영상에 넣지 않습니다.</p><div class="controls"><button id="export" disabled>🎬 궤적 영상 저장</button><button id="stopExport" disabled>녹화 중지</button></div><div class="status" id="exportStatus">영상 저장 기능을 확인 중입니다.</div><p class="muted">현재 버전은 원본 영상 위 시간 연동 오버레이와 좌표 저장을 지원합니다.</p></section><footer class="muted">Safari에서는 파일 앱/사진 앱에서 영상을 선택할 수 있습니다. 영상 코덱이 브라우저에서 지원되지 않으면 MP4(H.264)로 변환한 후 사용하세요. 분석 중에는 화면을 켜 두세요.</footer></main><canvas id="scan" hidden></canvas><script>
 (()=>{'use strict';const $=id=>document.getElementById(id),v=$('video'),ov=$('overlay'),ctx=ov.getContext('2d'),scan=$('scan'),sc=scan.getContext('2d',{willReadFrequently:true});const colors={white:'#ffffff',yellow:'#ffdf36',red:'#ff4c4c'},names={white:'흰',yellow:'노란',red:'빨간'};let templates={},referenceFrame=null,sourceFPS=30,exporting=false,exportStop=null,previewMode=false,pointDraft=null;let zone=null,zoneEditing=false,dragCorner=-1,zoneConfirmed=false;let seeds={},tracks={white:[],yellow:[],red:[]},picking=null,working=false,stop=false,url=null,frameStep=1/30,analyzed=false;const keys=Object.keys(colors);const status=s=>$('status').textContent=s;const enable=()=>{let loaded=!!v.videoWidth;['play','back','forward','preview','white','yellow','red','autoZone','editZone','resetZone'].forEach(id=>$(id).disabled=!loaded);$('analyze').disabled=!loaded||working||keys.some(k=>!seeds[k]);$('seek').disabled=!loaded;['json','csv'].forEach(id=>$(id).disabled=!analyzed);$('export').disabled=!loaded||!analyzed||exporting;$('preview').disabled=!loaded||!analyzed||working};const fmt=t=>{t=Math.max(0,t||0);return `${String(Math.floor(t/60)).padStart(2,'0')}:${String(Math.floor(t%60)).padStart(2,'0')}.${String(Math.floor((t%1)*100)).padStart(2,'0')}`};const resize=()=>{if(!v.videoWidth)return;ov.width=v.videoWidth;ov.height=v.videoHeight;scan.width=Math.min(960,v.videoWidth);scan.height=Math.round(v.videoHeight*scan.width/v.videoWidth);draw()};function draw(){
  if(!ov.width)return;ctx.clearRect(0,0,ov.width,ov.height);
  const alpha=+$('alpha').value/100,width=+$('thick').value*ov.width/1108;
  const visible=t=>$('full').checked||t<=v.currentTime+.035;
  const traceStyle=$('traceStyle').value,stable=$('stabilize').checked;
- const xy=p=>({x:stable&&Number.isFinite(p.drawX)?p.drawX:p.x,y:stable&&Number.isFinite(p.drawY)?p.drawY:p.y});
+ const smoothLevel=+$('smoothLevel').value;
  for(const k of keys){
+  const layer=smoothLevel>0?getSmoothLayer(k,smoothLevel,stable):null;
+  const xy=p=>{const c=layer?.byPoint.get(p);return c||{x:stable&&Number.isFinite(p.drawX)?p.drawX:p.x,y:stable&&Number.isFinite(p.drawY)?p.drawY:p.y}};
   const points=previewMode?tracks[k].filter(p=>visible(p.t)):[];
   ctx.strokeStyle=colors[k];ctx.lineWidth=width;ctx.lineJoin='round';ctx.lineCap='butt';ctx.globalAlpha=alpha;
-  // Render a connected section with a single stroke, not a round-capped stroke
-  // for EVERY frame. Repeated round caps were perceived as hundreds of dots.
-  // Separate longer temporal passes are independently composited, so an area
-  // genuinely revisited later accumulates opacity instead of being flattened.
-  const passSeconds=.85, passDistance=Math.max(95,ov.width*.155);
-  let last=null,runStart=null,runEnd=null,runDistance=0,runPoints=0;
+  // Render genuine detections as continuous paths.  An unobserved span is a
+  // distinct, lower-opacity SOLID connector only after both endpoints are
+  // validated. Reacquired positions can be bridged when plausible; do not
+  // manufacture additional detections or use the table boundary as a bounce.
+  // Visually stationary detections are collapsed so the initial ball location
+  // does not accumulate hundreds of opaque micro-strokes.
+  const passSeconds=.85,passDistance=Math.max(95,ov.width*.155);
+  let last=null,inkLast=null,runStart=null,runEnd=null,runDistance=0,runPoints=0;
+  const tinyMotion=Math.max(1.05,width*.19);
   function flush(){if(runPoints>1)ctx.stroke();runStart=null;runEnd=null;runDistance=0;runPoints=0}
-  function pushLine(a,b,t){
+  function pushLine(a,b,t,handles){
    if(!runStart){ctx.beginPath();ctx.moveTo(a.x,a.y);runStart=t;runPoints=1;}
-   ctx.lineTo(b.x,b.y);runPoints++;
-   runDistance+=Math.hypot(b.x-a.x,b.y-a.y);runEnd=t;
+   if(handles)ctx.bezierCurveTo(handles.c1x,handles.c1y,handles.c2x,handles.c2y,b.x,b.y);
+   else ctx.lineTo(b.x,b.y);
+   runPoints++;runDistance+=Math.hypot(b.x-a.x,b.y-a.y);runEnd=t;
    if(runEnd-runStart>=passSeconds||runDistance>=passDistance){
-    // Starting the next pass at the shared center means there is no gap;
-    // flat ends avoid the circular blobs seen in the previous renderer.
     flush();ctx.beginPath();ctx.moveTo(b.x,b.y);runStart=t;runEnd=t;runPoints=1;
    }
   }
+  function connectorAllowed(p,q,dt,dist){
+   if(!$('gaps').checked||dt<=0||dt>1.20)return false;
+   if(dist<.45||dist>Math.max(110,ov.width*.54))return false;
+   // Both ends must be detected, inside the user-edited table area (+ margin).
+   // Re-acquired IDs have already received the two-frame MOT verification.
+   if(!p.ok||!q.ok||!admissible(p.x,p.y,k)||!admissible(q.x,q.y,k))return false;
+   if((p.confidence??.5)<.18||(q.confidence??.5)<.18)return false;
+   if(dist/dt>Math.max(1550,ov.width*2.1))return false;
+   for(let u=.25;u<1;u+=.25){
+    if(!admissible(p.x+(q.x-p.x)*u,p.y+(q.y-p.y)*u,k))return false;
+   }
+   return true;
+  }
+  function bridge(p,q){
+   const a=xy(p),b=xy(q),dt=q.t-p.t,dist=Math.hypot(b.x-a.x,b.y-a.y);
+   if(!connectorAllowed(p,q,dt,Math.hypot(q.x-p.x,q.y-p.y)))return;
+   // V1.02: tapered alpha, solid continuous line, never a dashed gap.
+   // Longer uncertain spans fade more; short gaps keep a natural join.
+   const confidence=Math.min(p.confidence??.5,q.confidence??.5);
+   const fade=Math.max(.18,Math.min(.50, .54 - .28*Math.min(1,dt/.70)))*Math.max(.75,Math.min(1,confidence/.55));
+   const gradient=ctx.createLinearGradient(a.x,a.y,b.x,b.y);
+   const rgb=k==='white'?'255,255,255':k==='yellow'?'255,223,54':'255,76,76';
+   gradient.addColorStop(0,`rgba(${rgb},1)`);
+   gradient.addColorStop(.22,`rgba(${rgb},${fade.toFixed(3)})`);
+   gradient.addColorStop(.78,`rgba(${rgb},${fade.toFixed(3)})`);
+   gradient.addColorStop(1,`rgba(${rgb},1)`);
+   ctx.save();ctx.globalAlpha=alpha;ctx.strokeStyle=gradient;ctx.lineWidth=width;
+   ctx.lineCap='butt';ctx.setLineDash([]);ctx.beginPath();ctx.moveTo(a.x,a.y);
+   // With missing evidence a straight soft connector is an indication,
+   // NOT a reconstructed cushion bounce. Never extrapolate beyond endpoints.
+   ctx.lineTo(b.x,b.y);ctx.stroke();ctx.restore();
+  }
   for(const p of points){
    if(!p.ok)continue;
-   if(last&&!p.reacquired){
-    const dt=p.t-last.t,dist=Math.hypot(p.x-last.x,p.y-last.y);
-    const a=xy(last),b=xy(p);
-    // Decisions are based on RAW detections, never cosmetically moved coords.
-    if(dt<=frameStep*1.6&&dist<Math.max(90,ov.width*.13)){
-     ctx.setLineDash([]);pushLine(a,b,p.t);
-    }else{
-     flush();
-     if($('gaps').checked&&last.confidence>=.52&&p.confidence>=.52&&dt<=Math.min(.18,frameStep*4.5)&&dist<Math.max(55,ov.width*.075)){
-      ctx.save();ctx.globalAlpha=alpha*.48;ctx.setLineDash([Math.max(3,width*2.5),Math.max(4,width*2.5)]);
-      ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();ctx.restore();
-     }
+   if(!last){last=p;inkLast=p;continue}
+   const dt=p.t-last.t,dist=Math.hypot(p.x-last.x,p.y-last.y);
+   const contiguous=!p.reacquired&&dt<=frameStep*1.6&&dist<Math.max(90,ov.width*.13);
+   if(contiguous){
+    const a=xy(inkLast),b=xy(p);
+    // Keep the first point at ordinary line opacity, without a bright blob
+    // caused by repeatedly drawing the same stationary coordinates.
+    if(Math.hypot(b.x-a.x,b.y-a.y)>=tinyMotion){
+     ctx.strokeStyle=colors[k];ctx.globalAlpha=alpha;ctx.setLineDash([]);
+     pushLine(a,b,p.t,inkLast===last&&layer?curveHandles(layer,last,p):null);
+     inkLast=p;
     }
-   }else flush();
+   }else{
+    flush();bridge(last,p);inkLast=p;
+   }
    last=p;
   }
   flush();
@@ -78,15 +115,207 @@
   }else if(traceStyle==='current'){
    const p=points.filter(p=>p.ok).at(-1)||(!previewMode?seeds[k]:null);
    if(p&&(!previewMode||v.currentTime-p.t<=Math.max(.12,frameStep*2))){
-    const c=xy(p);ctx.beginPath();ctx.arc(c.x,c.y,Math.max(4,ov.width*.005),0,Math.PI*2);
-    ctx.fillStyle=colors[k];ctx.fill();ctx.lineWidth=1.5;ctx.strokeStyle='#182d25';ctx.stroke()
+    // The first/current ball marker is no longer drawn at 100% opacity.
+    // Match both the trajectory color and its selected alpha; no dark rim.
+    const c=xy(p);ctx.save();ctx.globalAlpha=alpha;ctx.beginPath();
+    ctx.arc(c.x,c.y,Math.max(width*.50,ov.width*.003),0,Math.PI*2);
+    ctx.fillStyle=colors[k];ctx.fill();ctx.restore();
    }
   }
  }
  if(zone&&!exporting){ctx.save();ctx.globalAlpha=zoneEditing?.95:.5;ctx.strokeStyle='#5fffc3';ctx.lineWidth=Math.max(2,ov.width/500);ctx.setLineDash(zoneEditing?[]:[8,6]);ctx.beginPath();zone.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.closePath();ctx.stroke();ctx.setLineDash([]);if(zoneEditing)zone.forEach((p,i)=>{ctx.beginPath();ctx.arc(p.x,p.y,Math.max(9,ov.width*.012),0,Math.PI*2);ctx.fillStyle='#5fffc3';ctx.fill();ctx.fillStyle='#102b26';ctx.font=`bold ${Math.max(12,ov.width*.014)}px sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(i+1,p.x,p.y)});ctx.restore()}
  if(picking){ctx.fillStyle='#fff';ctx.font=`bold ${Math.max(14,ov.width*.018)}px sans-serif`;ctx.fillText(`${names[picking]} 공을 터치하세요`,15,30)}
 }
-$('file').onchange=e=>{const f=e.target.files[0];if(!f)return;firstFrameReady=false;loadGeneration++;v.pause();v.removeAttribute('poster');v.currentTime=0;if(url)URL.revokeObjectURL(url);url=URL.createObjectURL(f);v.src=url;v.load();seeds={};templates={};referenceFrame=null;tracks={white:[],yellow:[],red:[]};analyzed=false;previewMode=false;pointDraft=null;$('preview').classList.remove('activePreview');$('preview').setAttribute('aria-pressed','false');$('magnifyPanel').classList.remove('active');picking=null;zone=null;zoneEditing=false;zoneConfirmed=false;ov.classList.remove('pick','zone');$('zoneStatus').textContent='첫 화면을 불러오는 중입니다…';updateSeedInfo();status(`불러온 파일: ${f.name}\n0초 첫 화면을 준비하고 있습니다…`);$('exportStatus').textContent='분석을 마친 뒤 동영상 저장을 시도할 수 있습니다.';enable()};// iOS Safari may show a black paused <video> until the first seek/play.
+
+// V1.02: optional collision-aware visual trajectory smoothing (0 = bitwise legacy presentation).
+// It never touches raw x/y detections, track identity, confidence, or missing-frame flags.
+const smoothLayerCache=new Map();
+function solveWeightedPolynomial(samples,degree){
+ const n=degree+1,A=Array.from({length:n},()=>Array(n+1).fill(0));
+ for(const s of samples){
+  const powers=[1,s.u,s.u*s.u];
+  for(let r=0;r<n;r++){
+   for(let c=0;c<n;c++)A[r][c]+=s.weight*powers[r]*powers[c];
+   A[r][n]+=s.weight*powers[r]*s.value;
+  }
+ }
+ for(let c=0;c<n;c++){
+  let pivot=c;for(let r=c+1;r<n;r++)if(Math.abs(A[r][c])>Math.abs(A[pivot][c]))pivot=r;
+  if(Math.abs(A[pivot][c])<1e-8)return null;
+  if(c!==pivot)[A[c],A[pivot]]=[A[pivot],A[c]];
+  const d=A[c][c];for(let z=c;z<=n;z++)A[c][z]/=d;
+  for(let r=0;r<n;r++)if(r!==c){const f=A[r][c];for(let z=c;z<=n;z++)A[r][z]-=f*A[c][z]}
+ }
+ return A.map(row=>row[n]);
+}
+function robustLocalFit(segment,j,windowRadius,degree){
+ const region=[];
+ for(let t=Math.max(0,j-windowRadius);t<=Math.min(segment.length-1,j+windowRadius);t++){
+  const u=t-j,wt=Math.exp(-.5*(u/(windowRadius*.75))**2);
+  const p=segment[t];region.push({u,base:wt,weight:wt,x:p.x,y:p.y});
+ }
+ const robustScale=Math.max(1.8,Math.min(3.8,windowRadius*.46));
+ let cx=null,cy=null;
+ for(let iteration=0;iteration<3;iteration++){
+  cx=solveWeightedPolynomial(region.map(s=>({...s,value:s.x})),degree);
+  cy=solveWeightedPolynomial(region.map(s=>({...s,value:s.y})),degree);
+  if(!cx||!cy)return null;
+  for(const s of region){
+   let px=0,py=0,power=1;
+   for(let r=0;r<cx.length;r++){px+=cx[r]*power;py+=cy[r]*power;power*=s.u}
+   const residual=Math.hypot(px-s.x,py-s.y);
+   s.weight=s.base*Math.min(1,robustScale/Math.max(residual,.001));
+  }
+ }
+ return {x:cx[0],y:cy[0]};
+}
+function getSmoothLayer(k,level,stable){
+ const a=tracks[k],cacheKey=`${k}/${level}/${stable?1:0}`;
+ const old=smoothLayerCache.get(cacheKey);
+ if(old&&old.source===a&&old.length===a.length)return old;
+ const byPoint=new WeakMap(),coords=new Array(a.length),segments=[];
+ const radius=Math.max(5,(templates[k]?.radius||6)*(v.videoWidth/Math.max(1,scan.width)));
+ const lengthUnit=Math.max(.6,ov.width/1108);
+ // Adjacent missing data, ID reacquisition, and large detection leaps break paths.
+ let s=[];
+ for(let i=0;i<a.length;i++){
+  const p=a[i],q=s.length?a[s[s.length-1]]:null;
+  const separated=!p.ok||p.reacquired||(q&&(p.t-q.t>frameStep*1.65||Math.hypot(p.x-q.x,p.y-q.y)>Math.max(90,ov.width*.13)));
+  if(separated&&s.length){segments.push(s);s=[]}
+  if(p.ok)s.push(i);
+ }
+ if(s.length)segments.push(s);
+ const windowRadius=[0,2,4,6][level],degree=level===1?1:2;
+ const mix=[0,.52,.79,.93][level],cap=[0,2.0,3.8,5.8][level]*lengthUnit;
+ for(const indices of segments){
+  const pts=indices.map(idx=>{
+   const p=a[idx];return {x:stable&&Number.isFinite(p.drawX)?p.drawX:p.x,y:stable&&Number.isFinite(p.drawY)?p.drawY:p.y};
+  });
+  const protect=new Set();
+  const guard=j=>{for(let d=-Math.max(2,windowRadius-1);d<=Math.max(2,windowRadius-1);d++)if(j+d>=0&&j+d<pts.length)protect.add(j+d)};
+  // Never smooth the ends of each observed run or join across missing evidence.
+  for(let j=0;j<Math.min(windowRadius,pts.length);j++){protect.add(j);protect.add(pts.length-1-j)}
+  for(let j=3;j<pts.length-3;j++){
+   const prev=pts[j-1],before=pts[j-3],after=pts[j+1],next=pts[j+3];
+   const dx1=prev.x-before.x,dy1=prev.y-before.y,dx2=next.x-after.x,dy2=next.y-after.y;
+   const speed1=Math.hypot(dx1,dy1),speed2=Math.hypot(dx2,dy2);
+   const meaningful=Math.min(speed1,speed2)>Math.max(3.5*lengthUnit,radius*.5);
+   if(meaningful){
+    const cosine=(dx1*dx2+dy1*dy2)/(speed1*speed2);
+    if(cosine<.80&&Math.max(speed1,speed2)<Math.min(speed1,speed2)*5)guard(j);
+   }
+   if((speed1<Math.max(1.5,radius*.2)&&speed2>Math.max(9,radius*1.3))||
+      (speed2<Math.max(1.5,radius*.2)&&speed1>Math.max(9,radius*1.3)))guard(j);
+  }
+  // Protect close ball contacts irrespective of the table boundary estimate.
+  for(let j=0;j<pts.length;j++){
+   const i=indices[j],p=a[i];
+   for(const other of keys){
+    if(other===k)continue;
+    const otherA=tracks[other];let q=otherA[i];
+    if(!q||Math.abs(q.t-p.t)>frameStep*.6)q=otherA.find(item=>item.ok&&Math.abs(item.t-p.t)<=frameStep*.45);
+    if(q&&q.ok){
+     const r2=Math.max(5,(templates[other]?.radius||6)*(v.videoWidth/Math.max(1,scan.width)));
+     if(Math.hypot(q.x-p.x,q.y-p.y)<2.35*(radius+r2)){guard(j);break}
+    }
+   }
+  }
+  for(let j=0;j<pts.length;j++){
+   const i=indices[j],p=a[i],base=pts[j];let xx=base.x,yy=base.y;
+   if(!protect.has(j)&&j>=windowRadius&&j<pts.length-windowRadius){
+    const fit=robustLocalFit(pts,j,windowRadius,degree);
+    if(fit){
+     const dx=fit.x-base.x,dy=fit.y-base.y,dist=Math.hypot(dx,dy);
+     const allowed=Math.min(cap,Math.max(1.25,radius*(level===1?.26:level===2?.43:.60)));
+     const factor=dist>1e-6?mix*Math.min(1,allowed/dist):0;
+     xx+=dx*factor;yy+=dy*factor;
+    }
+   }
+   const c={x:xx,y:yy,protected:protect.has(j),segId:segments.indexOf(indices),index:i};
+   coords[i]=c;byPoint.set(p,c);
+  }
+ }
+
+ // V1.02: compensate a ONE-FRAME centroid excursion immediately after a real
+ // ball-ball impact.  The original detector samples (p.x/y) remain untouched.
+ // A legitimate impact must stay sharp; only a low-confidence, off-axis
+ // departure sample is visually moved toward the post-impact movement ray.
+ // This intentionally does NOT interpolate arbitrary missing spans.
+ if(level>0){
+  for(const indices of segments){
+   const getBase=j=>{const p=a[indices[j]];return {x:stable&&Number.isFinite(p.drawX)?p.drawX:p.x,
+     y:stable&&Number.isFinite(p.drawY)?p.drawY:p.y};};
+   for(let j=4;j+4<indices.length;j++){
+    const before=a[indices[j-1]],first=a[indices[j]];
+    const anchor=getBase(j-1),candidate=getBase(j),later=getBase(j+3);
+    let stationary=true;
+    for(let n=j-4;n<j;n++){
+     if(Math.hypot(getBase(n).x-anchor.x,getBase(n).y-anchor.y)>Math.max(2.5,radius*.24)){
+      stationary=false;break;
+     }
+    }
+    if(!stationary)continue;
+    const departure=Math.hypot(candidate.x-anchor.x,candidate.y-anchor.y);
+    const total=Math.hypot(later.x-anchor.x,later.y-anchor.y);
+    if(departure<Math.max(6,radius*.8)||total<Math.max(25,radius*2.2))continue;
+    const ux=(later.x-anchor.x)/total,uy=(later.y-anchor.y)/total;
+    const projection=(candidate.x-anchor.x)*ux+(candidate.y-anchor.y)*uy;
+    if(projection<2||projection>total+radius*.5)continue;
+    const cross=(pt)=>Math.abs((pt.x-anchor.x)*uy-(pt.y-anchor.y)*ux);
+    const err=cross(candidate),afterErr=Math.max(cross(getBase(j+1)),cross(getBase(j+2)));
+    if(err<Math.max(5,radius*.46)||err-afterErr<Math.max(2.4,radius*.20))continue;
+    // Only allow this exceptional correction when there is evidence of a
+    // real object contact or a genuinely low-confidence first moving point.
+    const closeBall=keys.some(other=>{
+     if(other===k)return false;
+     const index=indices[j-1],time=before.t;
+     const q=tracks[other][index];if(!q||!q.ok||Math.abs(q.t-time)>frameStep*.7)return false;
+     const qRadius=Math.max(5,(templates[other]?.radius||6)*(v.videoWidth/Math.max(1,scan.width)));
+     return Math.hypot(q.x-before.x,q.y-before.y)<2.9*(radius+qRadius);
+    });
+    const lowConfidence=Number.isFinite(first.confidence)&&Number.isFinite(before.confidence)&&
+      first.confidence<before.confidence-.10;
+    if(!closeBall&&!lowConfidence)continue;
+    const original=coords[indices[j]];
+    if(!original)continue;
+    const onRay={x:anchor.x+ux*projection,y:anchor.y+uy*projection};
+    const dx=onRay.x-candidate.x,dy=onRay.y-candidate.y,dist=Math.hypot(dx,dy);
+    const maxShift=radius*[0,.55,.85,1.05][level];
+    const strength=[0,.53,.80,.96][level];
+    const factor=Math.min(strength,maxShift/Math.max(.001,dist));
+    original.x=candidate.x+dx*factor;original.y=candidate.y+dy*factor;
+    original.launchOutlierCorrected=true;
+    // Do not 'round off' a collision; its stationary/contact anchor is fixed.
+    // One exceptional post-contact sample may still receive a smoothed line.
+    original.protected=false;
+    const anchorCoord=coords[indices[j-1]];if(anchorCoord)anchorCoord.protected=true;
+    break; // At most one post-launch adjustment per observed run.
+   }
+  }
+ }
+ const layer={source:a,length:a.length,byPoint,coords,level};
+ smoothLayerCache.set(cacheKey,layer);return layer;
+}
+function curveHandles(layer,p,q){
+ const a=layer.byPoint.get(p),b=layer.byPoint.get(q);
+ if(!a||!b||a.protected||b.protected||a.segId!==b.segId)return null;
+ const dist=Math.hypot(b.x-a.x,b.y-a.y);
+ if(dist<.5)return null;
+ const left=layer.coords[a.index-1],right=layer.coords[b.index+1];
+ const before=left&&left.segId===a.segId&&!left.protected?left:a;
+ const after=right&&right.segId===b.segId&&!right.protected?right:b;
+ let t1x=(b.x-before.x)/(before===a?1:2),t1y=(b.y-before.y)/(before===a?1:2);
+ let t2x=(after.x-a.x)/(after===b?1:2),t2y=(after.y-a.y)/(after===b?1:2);
+ const along=(dx,dy)=>((dx*(b.x-a.x)+dy*(b.y-a.y))/(dist*dist));
+ // A reverse tangent is a true corner or detection ambiguity: keep a straight edge.
+ if(along(t1x,t1y)<.05||along(t2x,t2y)<.05)return null;
+ const factor=[0,.16,.19,.22][layer.level];
+ const lim=dist*.42;
+ const clamp=(dx,dy)=>{const m=Math.hypot(dx,dy),s=m>lim?lim/m:1;return [dx*s,dy*s]};
+ const [dx1,dy1]=clamp(t1x*factor,t1y*factor),[dx2,dy2]=clamp(t2x*factor,t2y*factor);
+ return {c1x:a.x+dx1,c1y:a.y+dy1,c2x:b.x-dx2,c2y:b.y-dy2};
+}
+$('file').onchange=e=>{const f=e.target.files[0];if(!f)return;firstFrameReady=false;loadGeneration++;v.pause();v.removeAttribute('poster');v.currentTime=0;if(url)URL.revokeObjectURL(url);url=URL.createObjectURL(f);v.src=url;v.load();seeds={};templates={};referenceFrame=null;smoothLayerCache.clear();tracks={white:[],yellow:[],red:[]};analyzed=false;previewMode=false;pointDraft=null;$('preview').classList.remove('activePreview');$('preview').setAttribute('aria-pressed','false');$('magnifyPanel').classList.remove('active');picking=null;zone=null;zoneEditing=false;zoneConfirmed=false;ov.classList.remove('pick','zone');$('zoneStatus').textContent='첫 화면을 불러오는 중입니다…';updateSeedInfo();status(`불러온 파일: ${f.name}\n0초 첫 화면을 준비하고 있습니다…`);$('exportStatus').textContent='분석을 마친 뒤 동영상 저장을 시도할 수 있습니다.';enable()};// iOS Safari may show a black paused <video> until the first seek/play.
 // Decode the first frame via a tiny seek WITHOUT playing, then use it as the
 // video's poster while the video stays paused at 0. The poster is visual only:
 // tracking still reads real video frames from v.
@@ -268,7 +497,8 @@ function autoZone(){
 $('autoZone').onclick=()=>{v.pause();autoZone()};$('editZone').onclick=()=>{if(!zone)wholeZone();v.pause();picking=null;ov.classList.remove('pick');zoneEditing=!zoneEditing;ov.classList.toggle('zone',zoneEditing);$('editZone').textContent=zoneEditing?'✓ 영역 편집 완료':'✥ 꼭짓점 드래그';if(!zoneEditing){zoneConfirmed=true;$('zoneStatus').textContent='✓ 편집 영역 적용 중 — 영역 밖 다른 당구대 후보는 제외하고, 경계의 오차는 여유 있게 허용합니다.';}draw()};$('resetZone').onclick=()=>{wholeZone();$('zoneStatus').textContent='전체 영상으로 초기화했습니다. 다른 당구대를 제외하려면 꼭짓점을 다시 지정하세요.'};
 function pointerXY(e){let r=ov.getBoundingClientRect();return {x:(e.clientX-r.left)/r.width*ov.width,y:(e.clientY-r.top)/r.height*ov.height}}
 ov.addEventListener('pointerdown',e=>{if(!zoneEditing||!zone)return;const p=pointerXY(e);let distances=zone.map(q=>Math.hypot(q.x-p.x,q.y-p.y)),index=distances.indexOf(Math.min(...distances));if(distances[index]>Math.max(35,ov.width*.09))return;dragCorner=index;ov.setPointerCapture(e.pointerId);e.preventDefault()});ov.addEventListener('pointermove',e=>{if(!zoneEditing||dragCorner<0)return;const p=pointerXY(e);zone[dragCorner]={x:Math.max(0,Math.min(ov.width,p.x)),y:Math.max(0,Math.min(ov.height,p.y))};draw();e.preventDefault()});for(let ev of ['pointerup','pointercancel'])ov.addEventListener(ev,()=>dragCorner=-1);
-for(let id of ['alpha','thick'])$(id).oninput=()=>{$('alphaText').textContent=$('alpha').value+'%';$('widthText').textContent=$('thick').value+'px';draw()};for(let id of ['full','stabilize','gaps','traceStyle'])$(id).onchange=draw;$('fps').onchange=()=>frameStep=1/Math.min(+$('fps').value,sourceFPS);
+for(let id of ['alpha','thick'])$(id).oninput=()=>{$('alphaText').textContent=$('alpha').value+'%';$('widthText').textContent=$('thick').value+'px';draw()};for(let id of ['full','stabilize','gaps','traceStyle'])$(id).onchange=draw;
+$('smoothLevel').onchange=()=>{const names=['기본','약한 보정','방송형 곡선','강한 보정'];$('smoothLevelText').textContent=`레벨 ${$('smoothLevel').value} · ${names[+$('smoothLevel').value]}`;draw()};$('fps').onchange=()=>frameStep=1/Math.min(+$('fps').value,sourceFPS);
 // V0.12 — manual tap is a hint. Estimate a compact ball in the paused first frame,
 // learn its observed appearance, and reject cue-like elongated components.
 const clamp=(x,lo,hi)=>Math.max(lo,Math.min(hi,x));
@@ -919,7 +1149,7 @@ function stabilizeTracks(){
  }
  return stats;
 }
-$('preview').onclick=()=>{if(!analyzed)return;previewMode=!previewMode;if(previewMode)$('full').checked=false;$('preview').textContent=previewMode?'◉ 트래킹 라인 표시 중':'◎ 트래킹 라인 보기';$('preview').classList.toggle('activePreview',previewMode);$('preview').setAttribute('aria-pressed',String(previewMode));draw()};$('analyze').onclick=async()=>{if(working)return;v.pause();working=true;stop=false;analyzed=false;enable();$('cancel').disabled=false;$('progress').hidden=false;$('progress').value=0;tracks={white:[],yellow:[],red:[]};templates={};referenceFrame=null;frameStep=1/Math.min(+$('fps').value,sourceFPS);const oldTime=v.currentTime;$('full').checked=false;scan.width=Math.min(960,v.videoWidth);scan.height=Math.round(v.videoHeight*scan.width/v.videoWidth);const steps=Math.ceil(v.duration/frameStep),sx=v.videoWidth/scan.width,sy=v.videoHeight/scan.height;let lost={white:0,yellow:0,red:0},last={...seeds},previous={},pending={},launched={white:false,yellow:false,red:false},lastDetectedTime={white:0,yellow:0,red:0},recoveries={white:0,yellow:0,red:0};
+$('preview').onclick=()=>{if(!analyzed)return;previewMode=!previewMode;if(previewMode)$('full').checked=false;$('preview').textContent=previewMode?'◉ 트래킹 라인 표시 중':'◎ 트래킹 라인 보기';$('preview').classList.toggle('activePreview',previewMode);$('preview').setAttribute('aria-pressed',String(previewMode));draw()};$('analyze').onclick=async()=>{if(working)return;v.pause();working=true;stop=false;analyzed=false;enable();$('cancel').disabled=false;$('progress').hidden=false;$('progress').value=0;smoothLayerCache.clear();tracks={white:[],yellow:[],red:[]};templates={};referenceFrame=null;frameStep=1/Math.min(+$('fps').value,sourceFPS);const oldTime=v.currentTime;$('full').checked=false;scan.width=Math.min(960,v.videoWidth);scan.height=Math.round(v.videoHeight*scan.width/v.videoWidth);const steps=Math.ceil(v.duration/frameStep),sx=v.videoWidth/scan.width,sy=v.videoHeight/scan.height;let lost={white:0,yellow:0,red:0},last={...seeds},previous={},pending={},launched={white:false,yellow:false,red:false},lastDetectedTime={white:0,yellow:0,red:0},recoveries={white:0,yellow:0,red:0};
 // All three stationary balls were marked at 0s; use ONE shared reference frame.
 await seek(0);sc.drawImage(v,0,0,scan.width,scan.height);
 const firstFrame=sc.getImageData(0,0,scan.width,scan.height);referenceFrame=firstFrame;
@@ -961,7 +1191,7 @@ status(`초기 공 중심/지름 보정 완료. 실제 ${Math.round(1/frameStep)
  }else pending[k]=null;
  // Reconfirmed red recovery is accepted as a NEW segment: never join a
  // gap with an invented line, and never use the polygon as a bounce point.
- previous[k]=lost[k]?null:last[k];last[k]={...found,t};if((k==='white'||k==='yellow')&&Math.hypot(found.x-seeds[k].x,found.y-seeds[k].y)>Math.max(34,(seeds[k].radius||8)*2.8))launched[k]=true;lastDetectedTime[k]=t;lost[k]=0;tracks[k].push({...found,t})}else{if(pending[k]&&t-pending[k].time>.27)pending[k]=null;lost[k]++;tracks[k].push({x:last[k].x,y:last[k].y,t,ok:false});if(lost[k]>2)previous[k]=null}}}catch(err){status('프레임 분석 오류: '+err.message);stop=true;break}if(i%5===0){$('progress').value=Math.round(i/steps*100);status(`분석 중 ${Math.round(i/steps*100)}% · ${i+1}/${steps+1} 프레임`);await new Promise(r=>setTimeout(r,0))}}const repairStats=stop?{points:0,gaps:0}:await recoverYellowMotionGaps();validateTracks();const stabilized=stabilizeTracks();working=false;analyzed=keys.some(k=>tracks[k].some(p=>p.ok));$('progress').value=100;$('cancel').disabled=true;previewMode=analyzed;$('full').checked=false;$('preview').textContent=previewMode?'◉ 트래킹 라인 표시 중':'◎ 트래킹 라인 보기';$('preview').classList.toggle('activePreview',previewMode);$('preview').setAttribute('aria-pressed',String(previewMode));enable();await seek(oldTime);status(`${stop?'중단됨':'분석 완료'} · 흰 공 ${tracks.white.filter(p=>p.ok).length}개 (재탐색 ${recoveries.white}회) / 노란 공 ${tracks.yellow.filter(p=>p.ok).length}개 (재탐색 ${recoveries.yellow}회) / 빨간 공 ${tracks.red.filter(p=>p.ok).length}개 위치 검출\n추적 결과를 재생하며 확인하세요. 검출 궤적은 실선, 신뢰 가능한 양끝 검출 사이의 짧은 누락 구간만 점선입니다. 경계선으로 궤적을 연장하지 않습니다. 노란 공 실제 영상 재검출: ${repairStats.points}프레임 (${repairStats.gaps}구간). 미세 보정: 흰 ${stabilized.white} / 노란 ${stabilized.yellow} / 빨간 ${stabilized.red} 프레임 (표시 좌표만 변경).`);draw()};$('cancel').onclick=()=>{stop=true;status('중단 요청 중…')};$('clear').onclick=()=>{tracks={white:[],yellow:[],red:[]};analyzed=false;previewMode=false;$('preview').textContent='◎ 트래킹 라인 보기';$('preview').classList.remove('activePreview');enable();draw();status('궤적을 초기화했습니다. 공의 초기 지정은 유지됩니다.')};function save(name,data,type){const blob=new Blob([data],{type}),u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),10000)}$('json').onclick=()=>save('archibald_carom_tracks.json',JSON.stringify({version:'0.23',video:{width:v.videoWidth,height:v.videoHeight,duration:v.duration},frameStep,zone,templates,tracks},null,2),'application/json');$('csv').onclick=()=>{let rows=['ball,time_sec,x_px,y_px,detected,display_x_px,display_y_px'];for(let k of keys)for(let p of tracks[k])rows.push(`${k},${p.t.toFixed(4)},${p.x.toFixed(2)},${p.y.toFixed(2)},${p.ok?1:0},${(p.drawX??p.x).toFixed(2)},${(p.drawY??p.y).toFixed(2)}`);save('archibald_carom_tracks.csv',rows.join('\n'),'text/csv')};// Export by recording a composited canvas stream in real time. No fake MP4 extension.
+ previous[k]=lost[k]?null:last[k];last[k]={...found,t};if((k==='white'||k==='yellow')&&Math.hypot(found.x-seeds[k].x,found.y-seeds[k].y)>Math.max(34,(seeds[k].radius||8)*2.8))launched[k]=true;lastDetectedTime[k]=t;lost[k]=0;tracks[k].push({...found,t})}else{if(pending[k]&&t-pending[k].time>.27)pending[k]=null;lost[k]++;tracks[k].push({x:last[k].x,y:last[k].y,t,ok:false});if(lost[k]>2)previous[k]=null}}}catch(err){status('프레임 분석 오류: '+err.message);stop=true;break}if(i%5===0){$('progress').value=Math.round(i/steps*100);status(`분석 중 ${Math.round(i/steps*100)}% · ${i+1}/${steps+1} 프레임`);await new Promise(r=>setTimeout(r,0))}}const repairStats=stop?{points:0,gaps:0}:await recoverYellowMotionGaps();validateTracks();const stabilized=stabilizeTracks();smoothLayerCache.clear();working=false;analyzed=keys.some(k=>tracks[k].some(p=>p.ok));$('progress').value=100;$('cancel').disabled=true;previewMode=analyzed;$('full').checked=false;$('preview').textContent=previewMode?'◉ 트래킹 라인 표시 중':'◎ 트래킹 라인 보기';$('preview').classList.toggle('activePreview',previewMode);$('preview').setAttribute('aria-pressed',String(previewMode));enable();await seek(oldTime);status(`${stop?'중단됨':'분석 완료'} · 흰 공 ${tracks.white.filter(p=>p.ok).length}개 (재탐색 ${recoveries.white}회) / 노란 공 ${tracks.yellow.filter(p=>p.ok).length}개 (재탐색 ${recoveries.yellow}회) / 빨간 공 ${tracks.red.filter(p=>p.ok).length}개 위치 검출\n추적 결과를 재생하며 확인하세요. 실제 검출 궤적은 기본 실선, 양끝이 확인된 누락 구간은 더 투명한 실선으로 표시합니다. 경계선으로 궤적을 연장하지 않습니다. 노란 공 실제 영상 재검출: ${repairStats.points}프레임 (${repairStats.gaps}구간). 미세 보정: 흰 ${stabilized.white} / 노란 ${stabilized.yellow} / 빨간 ${stabilized.red} 프레임 (표시 좌표만 변경).`);draw()};$('cancel').onclick=()=>{stop=true;status('중단 요청 중…')};$('clear').onclick=()=>{smoothLayerCache.clear();tracks={white:[],yellow:[],red:[]};analyzed=false;previewMode=false;$('preview').textContent='◎ 트래킹 라인 보기';$('preview').classList.remove('activePreview');enable();draw();status('궤적을 초기화했습니다. 공의 초기 지정은 유지됩니다.')};function save(name,data,type){const blob=new Blob([data],{type}),u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),10000)}$('json').onclick=()=>save('archibald_carom_tracks.json',JSON.stringify({version:'1.02',video:{width:v.videoWidth,height:v.videoHeight,duration:v.duration},frameStep,zone,templates,tracks},null,2),'application/json');$('csv').onclick=()=>{let rows=['ball,time_sec,x_px,y_px,detected,display_x_px,display_y_px'];for(let k of keys)for(let p of tracks[k])rows.push(`${k},${p.t.toFixed(4)},${p.x.toFixed(2)},${p.y.toFixed(2)},${p.ok?1:0},${(p.drawX??p.x).toFixed(2)},${(p.drawY??p.y).toFixed(2)}`);save('archibald_carom_tracks.csv',rows.join('\n'),'text/csv')};// Export by recording a composited canvas stream in real time. No fake MP4 extension.
 const mimeCandidates=['video/mp4;codecs="avc1.42E01E"','video/mp4','video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm'];
 $('export').onclick=async()=>{
  if(exporting||!analyzed)return;
@@ -978,7 +1208,7 @@ $('export').onclick=async()=>{
    const render=()=>{if(!exporting)return;try{c.clearRect(0,0,out.width,out.height);c.drawImage(v,0,0,out.width,out.height);draw();c.drawImage(ov,0,0,out.width,out.height);$('exportStatus').textContent=`녹화 중 ${fmt(v.currentTime)} / ${fmt(v.duration)} · ${mime.startsWith('video/mp4')?'MP4':'WebM'} (무음)`}catch(e){$('exportStatus').textContent='합성 오류: '+e.message}raf=requestAnimationFrame(render)};
    exportStop=()=>{if(ended)return;ended=true;v.pause();cancelAnimationFrame(raf);if(recorder.state!=='inactive')recorder.stop()};
    v.addEventListener('ended',exportStop,{once:true});recorder.start(500);render();await v.play();await completed;
-   v.removeEventListener('ended',exportStop);if(chunks.length){const ext=mime.startsWith('video/mp4')?'mp4':'webm';const blob=new Blob(chunks,{type:mime});const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download='carom_tracked.'+ext;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),60000);$('exportStatus').textContent=`저장 요청 완료: ${ext.toUpperCase()} · ${(blob.size/1048576).toFixed(1)}MB · 무음. iPhone에서는 파일 앱의 다운로드 폴더를 확인하세요.`}else $('exportStatus').textContent='녹화 데이터가 생성되지 않았습니다. 다른 브라우저에서 시도하세요.';
+   v.removeEventListener('ended',exportStop);if(chunks.length){const ext=mime.startsWith('video/mp4')?'mp4':'webm';const blob=new Blob(chunks,{type:mime});const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download='archibald_carom_tracked_v1.02.'+ext;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),60000);$('exportStatus').textContent=`저장 요청 완료: ${ext.toUpperCase()} · ${(blob.size/1048576).toFixed(1)}MB · 무음. iPhone에서는 파일 앱의 다운로드 폴더를 확인하세요.`}else $('exportStatus').textContent='녹화 데이터가 생성되지 않았습니다. 다른 브라우저에서 시도하세요.';
  }catch(e){$('exportStatus').textContent='영상 저장 실패: '+e.message;if(recorder&&recorder.state!=='inactive')recorder.stop()}
  finally{exporting=false;exportStop=null;cancelAnimationFrame(raf);if(stream)stream.getTracks().forEach(t=>t.stop());$('stopExport').disabled=true;$('full').checked=oldFull;previewMode=oldPreview;v.playbackRate=oldRate;await seek(oldTime);enable();draw()}
 };
