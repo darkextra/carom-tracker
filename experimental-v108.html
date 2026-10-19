@@ -1,0 +1,2023 @@
+<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#102b26"><title>Archibald Carom Tracker · V1.08 · Experimental</title><style>
+:root{color-scheme:dark;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#0c1e1a;color:#f4f6f2}*{box-sizing:border-box}body{margin:0;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}main{max-width:900px;margin:auto;padding:15px}header{display:flex;align-items:center;justify-content:space-between;margin:4px 0 14px}h1{font-size:21px;margin:0}small,.hint{color:#aabdb5}small{font-size:12px}.panel{background:#16332c;border:1px solid #2b5145;border-radius:15px;padding:13px;margin-bottom:12px}.stage{position:relative;background:#07120f;border-radius:10px;overflow:hidden;line-height:0;touch-action:manipulation}video{display:block;width:100%;height:auto;max-height:65vh;background:#07120f}canvas#overlay{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}canvas#overlay.pick,canvas#overlay.zone{pointer-events:auto;touch-action:none}.controls{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}button,.filebtn,select{background:#275746;border:1px solid #467b66;color:white;border-radius:10px;padding:11px 13px;font-size:14px;font-weight:600;cursor:pointer}button:disabled{opacity:.35}button.primary,.filebtn{background:#3b8467}.filebtn input{display:none}.row{display:flex;gap:12px;align-items:center;justify-content:space-between;margin:11px 0;flex-wrap:wrap}.row label{font-size:14px}input[type=range]{accent-color:#77dfac;max-width:190px;width:44vw}#seek{width:100%;max-width:none}.chips{display:flex;gap:7px;flex-wrap:wrap}.chip{border:1px solid #547365;border-radius:8px;padding:8px 10px;font-size:13px}.dot{display:inline-block;width:10px;height:10px;border-radius:50%;vertical-align:middle;margin-right:5px}.status{font-size:13px;line-height:1.5;color:#c9ddd4;white-space:pre-wrap}.muted{color:#a4b6ad;font-size:12px;line-height:1.6}progress{width:100%;accent-color:#7ee5b4}a{color:#9eecc7}.separator{height:1px;background:#345648;margin:12px 0}#magnifyPanel{display:none;margin:10px 0;padding:12px;border:1px solid #4e987c;border-radius:12px;background:#102820}#magnifyPanel.active{display:block}#magnifyCanvas{display:block;width:min(100%,320px);height:auto;aspect-ratio:1;background:#07120f;margin:10px auto;touch-action:none;border:1px solid #71bb9d;border-radius:8px}#magnifyPanel .controls{justify-content:center}#magnifyHint{font-size:13px;line-height:1.5;color:#d8e7e0}.activePreview{background:#327b60!important;border-color:#a0e9bc!important}.frame-nav{display:flex;flex-wrap:wrap;gap:6px;align-items:center}.frame-nav button{padding:9px 10px;min-height:40px;font-size:13px}@media(max-width:480px){.frame-nav{width:100%;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:5px}.frame-nav button{font-size:11px;padding:9px 3px}}
+/* V0.19 — one ball per row; calibration feedback beside its selector. */
+.ball-rows{display:grid;grid-template-columns:minmax(0,1fr);gap:5px;margin:8px 0 3px}
+.seed-mode{display:block;width:100%;margin-top:5px;font-size:12px;padding:9px 5px}.ball-row{display:grid;grid-template-columns:minmax(118px,0.86fr) minmax(0,1.25fr);align-items:center;gap:10px;padding:0;background:transparent;border:0;border-radius:0}
+.ball-row button{width:100%;min-height:39px;text-align:left;padding:8px 11px;white-space:nowrap}
+.ball-result{display:flex;flex-direction:column;justify-content:center;min-width:0;gap:1px}
+.ball-state{font-size:13px;font-weight:650;color:#e4f3ea;line-height:1.3;overflow-wrap:anywhere}
+.ball-coord{font-size:11px;color:#a4c6b5;line-height:1.3;font-variant-numeric:tabular-nums}
+.ball-row:has(button:disabled){opacity:.72}
+@media (max-width:390px){main{padding:11px}.ball-row{grid-template-columns:minmax(110px,.88fr) minmax(0,1.2fr);gap:8px;padding:0}.ball-row button{font-size:13px;padding:10px 8px}.ball-state{font-size:12px}}
+.zone-buttons{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.zone-buttons button{min-width:0;white-space:nowrap;padding:10px 5px;font-size:13px}.frame-nav{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto;gap:6px;width:100%;align-items:stretch}.frame-nav button{min-width:0;white-space:nowrap}.frame-step-label{display:flex;align-items:center;gap:5px;font-size:12px;color:#d4e8de;white-space:nowrap}.frame-step-label input{width:58px;min-width:0;background:#275746;color:white;border:1px solid #467b66;border-radius:8px;padding:9px 5px;text-align:center;font-size:15px;font-weight:600}@media(max-width:480px){.frame-nav{grid-template-columns:minmax(0,1fr) minmax(0,1fr) auto}.frame-nav button{font-size:12px;padding:9px 5px}.frame-step-label{font-size:11px}.frame-step-label input{width:49px;padding:8px 3px}.zone-buttons button{font-size:12px;padding:10px 3px}}
+/* V0.22: compact transport buttons on the left, step count aligned right. */
+.frame-nav{display:flex;align-items:center;justify-content:space-between;flex-wrap:nowrap;gap:8px;width:100%;margin-top:0}
+.frame-step-actions{display:flex;gap:6px;align-items:center;flex-wrap:nowrap;min-width:0}
+.frame-nav .frame-step-actions button{flex:0 0 auto;min-width:0;min-height:40px;padding:9px 9px;font-size:14px;font-weight:600;white-space:nowrap}
+.frame-nav .frame-step-label{flex:0 0 auto;margin-left:auto}
+@media(max-width:480px){.frame-nav{display:flex;grid-template-columns:none;gap:5px}.frame-step-actions{gap:4px}.frame-nav .frame-step-actions button{font-size:14px;padding:9px 6px}.frame-nav .frame-step-label{font-size:11px}.frame-nav .frame-step-label input{width:47px}}
+</style></head><body><main><header><div><h1>◉ Archibald Carom Tracker</h1><small>모바일 · 브라우저 내 처리 · 수동 모드 · V1.08 · Experimental</small></div><small>3-CUSHION</small></header>
+<section class="panel"><div class="controls"><label class="filebtn">📁 불러오기<input id="file" type="file" accept="video/*"></label><button id="play" disabled>▶ 재생</button><button id="preview" disabled aria-pressed="false">◎ 트래킹 라인 보기</button><div class="frame-nav" aria-label="프레임 이동"><div class="frame-step-actions"><button id="back" disabled>◀ 3프레임</button><button id="forward" disabled>3프레임 ▶</button></div><label class="frame-step-label" for="frameMoveCount">이동값 <input id="frameMoveCount" type="number" inputmode="numeric" min="1" max="300" step="1" value="3" aria-label="프레임 이동값"></label></div></div><div class="stage" id="stage"><video id="video" playsinline webkit-playsinline preload="auto"></video><canvas id="overlay"></canvas></div><div id="magnifyPanel"><b>🔎 공 중심 확대 지정</b><p id="magnifyHint">확대 화면에서 공의 정확한 중심을 터치한 다음 확정하세요.</p><canvas id="magnifyCanvas" width="320" height="320"></canvas><div class="controls"><button id="confirmPoint">✓ 중심 확정</button><button id="cancelPoint">취소</button></div></div><input id="seek" type="range" min="0" max="1000" value="0" disabled><div class="row"><small id="clock">00:00.00 / 00:00.00</small><small id="dimensions">동영상을 선택하세요</small></div><div class="row"><label>재생 속도 <select id="speed"><option value="0.25">0.25×</option><option value="0.5">0.5×</option><option value="0.75">0.75×</option><option value="1" selected>1×</option><option value="1.5">1.5×</option><option value="2">2×</option></select></label><small id="frameinfo">FPS: 분석 대기</small></div><div class="row"><label>원본 FPS (수동 입력, 기본 30) <input id="sourcefps" type="number" min="1" max="240" step="0.001" value="30" style="width:88px;background:#275746;color:white;border:1px solid #467b66;border-radius:8px;padding:8px"></label><small id="framecount">총 프레임: -</small></div></section>
+<section class="panel"><b>① 당구대 영역 설정</b><p class="muted">자동 인식 성공 시 곧바로 탐색 영역에 적용하며, 네 꼭짓점을 다시 끌어 조정할 수 있습니다. 실패 시 전체 영상이 기본 영역입니다.</p><div class="controls zone-buttons"><button id="autoZone" disabled>▱ 자동 추정</button><button id="editZone" disabled>✥ 꼭짓점 드래그</button><button id="resetZone" disabled>초기화</button></div><div class="status" id="zoneStatus">영상 선택 후 자동 추정할 수 있습니다.</div></section>
+<section class="panel"><b>② 공 중심 설정</b><div class="ball-rows" role="group" aria-label="공 3개 중심 지정 및 보정 결과">
+<div class="ball-row"><button id="white" disabled>⚪ 흰 공 지정</button><div class="ball-result" aria-live="polite"><span class="ball-state" id="wState">중심 미지정 · 지름 —</span><span class="ball-coord" id="wCoord">좌표 —</span></div></div>
+<div class="ball-row"><button id="yellow" disabled>🟡 노란 공 지정</button><div class="ball-result" aria-live="polite"><span class="ball-state" id="yState">중심 미지정 · 지름 —</span><span class="ball-coord" id="yCoord">좌표 —</span></div></div>
+<div class="ball-row"><button id="red" disabled>🔴 빨간 공 지정</button><div class="ball-result" aria-live="polite"><span class="ball-state" id="rState">중심 미지정 · 지름 —</span><span class="ball-coord" id="rCoord">좌표 —</span></div></div>
+</div><div class="separator"></div><b>초기 공 중심 확인</b> <label style="float:right;margin-top:-8px"> <select id="reviewBall" aria-label="확대해서 확인할 공" style="font-size:13px;padding:7px"><option value="white">⚪ 흰 공</option><option value="yellow">🟡 노란 공</option><option value="red">🔴 빨간 공</option></select></label>
+<p class="muted">중심의 반사광이나 붉은 점을 피해서 찍지 마세요. 공의 중앙을 대략 지정하면 외곽으로 보정하고, 공 내부 여러 픽셀로 색상을 학습합니다. 아래 청록색 십자가는 현재 선택된 중심이고, 주황색은 최초 터치입니다. 최초 터치 유지 모드에서는 두 위치가 일치합니다.</p>
+<div class="row" style="gap:7px"><label style="flex:1;min-width:90px">⚪ 흰 공 중심<select id="seedModeWhite" class="seed-mode"><option value="manual" selected>최초 터치 유지</option><option value="auto">자동(엄격 검증)</option></select></label><label style="flex:1;min-width:90px">🟡 노란 공 중심<select id="seedModeYellow" class="seed-mode"><option value="manual" selected>최초 터치 유지</option><option value="auto">자동(엄격 검증)</option></select></label><label style="flex:1;min-width:90px">🔴 빨간 공 중심<select id="seedModeRed" class="seed-mode"><option value="auto" selected>자동(엄격 검증)</option><option value="manual">최초 터치 유지</option></select></label></div>
+<div class="row"><label><input type="checkbox" id="shadowSeed" checked> V1.08 음영 대응 외곽 후보 계산 (자동을 선택한 공에만 중심 이동 적용)</label></div>
+<p class="muted">흰 공과 노란 공은 최초 터치를 기본으로 유지합니다. 자동을 선택해도 외곽 근거가 충분하고 이동량이 작을 때만 이동합니다. 공의 지름·색상 학습은 터치한 한 픽셀과 분리합니다.</p>
+<canvas id="seedReview" width="480" height="220" aria-label="세 공의 중심과 지름 확대 확인" style="width:100%;height:auto;background:#102821;border:1px solid #457762;border-radius:10px"></canvas>
+<div class="row"><small id="seedReviewStatus">세 공의 초기 중심을 지정하면 확대해 표시합니다.</small><button id="recheckSeeds" disabled>⟳ 중심 재검증</button></div>
+<div class="separator"></div><b>③ 자동 분석</b><div class="row"><label>분석 간격</label><select id="fps"><option value="10">초당 10프레임 (빠름)</option><option value="15">초당 15프레임</option><option value="30" selected>초당 30프레임</option><option value="60">초당 60프레임 (빠른 공)</option><option value="90">초당 90프레임</option><option value="120">초당 120프레임 (고속 촬영)</option></select></div><p class="muted">원본 FPS보다 높은 분석 간격은 새로운 프레임을 만들지 않습니다. 60fps 이상 촬영 영상에서 높은 값을 선택하세요.</p><div class="separator"></div>
+<div class="row"><label><input type="checkbox" id="advancedCenter" checked> 정밀 공 중심 보정 (RANSAC 외곽 + 양방향 후보 검증)</label></div>
+<div class="row"><label><input type="checkbox" id="shadowGeometry" checked> V1.08 음영 대응 외곽 후보로 정밀 중심 검증 (클릭 즉시 기존 후보와 비교)</label></div>
+<div class="status" id="shadowStatus">그림자·반사광 외곽 검증 대기</div>
+<div class="row"><label><input type="checkbox" id="yellowCentroid" checked> 노란 공 실제 색상 외곽 중심 검증 (잘못된 중심 후보 재선택)</label></div>
+<div class="status" id="yellowStatus">노란 공 중심 재검증 대기</div>
+<div class="row"><label><input type="checkbox" id="collisionReview" checked> 충돌 전후 양방향 검증 (세 공 공통·실제 검출 좌표 보존)</label></div>
+<div class="row"><label><input type="checkbox" id="projectiveMotion" checked> 당구대 원근 평면 좌표로 이동 판단 보조 (공 높이 투영 미보정)</label></div>
+<div class="status" id="collisionStatus">충돌 재검증 대기</div>
+<div class="row"><label for="advancedScope">정밀 분석 대상</label><select id="advancedScope"><option value="white" selected>흰 공 우선 (권장)</option><option value="all">세 공 모두 (시험적)</option></select></div>
+<p class="muted">기존 추적 기반은 보존하고 노란 공의 잘못된 중심 후보를 재검증합니다. 원본 검출 좌표와 수정 좌표를 별도 저장합니다. 분석 이후 체크만 끄면 기존 표시와 비교할 수 있습니다. 대상 공 종류를 바꾸면 재분석해야 합니다.</p>
+<div class="status" id="advancedStatus">정밀 중심을 적용할 공을 선택한 뒤 분석하세요.</div>
+<div class="controls"><button class="primary" id="analyze" disabled>◎ 전체 영상 분석</button><button id="cancel" disabled>중지</button><button id="clear" disabled>궤적 초기화</button></div><progress id="progress" value="0" max="100" hidden></progress><div class="status" id="status">영상을 선택하면 시작할 수 있습니다.</div></section>
+<section class="panel"><b>④ 트래킹 라인 옵션</b><div class="row"><label>불투명도 <span id="alphaText">60%</span></label><input id="alpha" type="range" min="10" max="100" value="60"></div><div class="row"><label>선 두께 <span id="widthText">6px</span></label><input id="thick" type="range" min="1" max="12" value="6"></div><div class="row"><label><input id="full" type="checkbox"> 전체 궤적 고정 표시 (기본 해제 · 시간에 따른 표시를 원하면 끄기)</label><label><input id="gaps" type="checkbox" checked> 누락 구간 부드러운 연결 (검출 확인 시 낮은 불투명도의 실선)</label><label><input id="stabilize" type="checkbox" checked> 궤적 미세 흔들림·작은 삼각형 보정 (검출 좌표는 그대로 보존)</label></div><div class="row"><label for="smoothLevel">궤적 부드러움 <span id="smoothLevelText">레벨 0 · 기본</span></label><select id="smoothLevel" aria-label="궤적 부드러움 단계"><option value="0" selected>0 · 기본 (현재 궤적 그대로)</option><option value="1">1 · 미세한 흔들림 완화</option><option value="2">2 · 방송형 자연스러운 곡선</option><option value="3">3 · 강한 시각적 보정</option></select></div><p class="muted">원본 검출 좌표는 그대로 보존합니다. 레벨 1~3은 실제 충돌 방향을 보존하며 충돌 직후의 단발성 검출 중심 오류도 검사합니다. 표시 선에만 적용됩니다.</p><div class="row"><label for="traceStyle">궤적 표시 형태</label><select id="traceStyle"><option value="line" selected>연속된 선만 표시 · 추적점 없음</option><option value="current">선 + 현재 공 위치</option><option value="all">선 + 프레임별 추적점</option></select></div><div class="controls"><button id="json" disabled>좌표 JSON 저장</button><button id="csv" disabled>좌표 CSV 저장</button></div><div class="separator"></div><b>⑤ 영상 다운로드(실험적/음성제외)</b><p class="muted">원본 영상과 현재 궤적을 합성해 녹화합니다. 당구대 영역 점선은 저장 영상에 넣지 않습니다.</p><div class="controls"><button id="export" disabled>🎬 궤적 영상 저장</button><button id="stopExport" disabled>녹화 중지</button></div><div class="status" id="exportStatus">영상 저장 기능을 확인 중입니다.</div><p class="muted">현재 버전은 원본 영상 위 시간 연동 오버레이와 좌표 저장을 지원합니다.</p></section><footer class="muted">Safari에서는 파일 앱/사진 앱에서 영상을 선택할 수 있습니다. 영상 코덱이 브라우저에서 지원되지 않으면 MP4(H.264)로 변환한 후 사용하세요. 분석 중에는 화면을 켜 두세요.</footer></main><canvas id="scan" hidden></canvas><script>
+/* Archibald Carom Tracker V1.08: robust seed geometry, projective table-plane
+ * diagnostics, and symmetric collision evidence. Dependency-free JS module.
+ * Model output is ALWAYS a candidate, never an authority to invent detections.
+ */
+(function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;else root.ArchibaldV106=api;})(typeof globalThis!=='undefined'?globalThis:this,function(){'use strict';
+const clip=(a,b,c)=>Math.max(b,Math.min(c,a)),tau=Math.PI*2;
+function rgb(img,x,y){x=Math.round(x);y=Math.round(y);if(x<0||y<0||x>=img.width||y>=img.height)return null;let i=(y*img.width+x)*4,d=img.data;return [d[i],d[i+1],d[i+2]];}
+function median(a){if(!a.length)return 0;const b=a.slice().sort((x,y)=>x-y);return b[Math.floor(b.length/2)];}
+function quantile(a,q){if(!a.length)return 0;const b=a.slice().sort((x,y)=>x-y);return b[Math.floor((b.length-1)*q)];}
+function colorDistance(a,b){return Math.hypot(a[0]-b[0],a[1]-b[1],a[2]-b[2])/441.673;}
+function colorMedian(a){return [0,1,2].map(i=>median(a.map(p=>p[i])))}
+function discSamples(img,x,y,r){const a=[];for(let rad of [.24,.48,.70])for(let j=0;j<16;j++){let t=j*tau/16,s=rgb(img,x+rad*r*Math.cos(t),y+rad*r*Math.sin(t));if(s)a.push(s)}return a;}
+function colorScore(c,k){let [r,g,b]=c,top=Math.max(r,g,b);if(k==='white')return clip((top-80)/110,0,1)*clip(1-(top-Math.min(r,g,b))/165,0,1);if(k==='red')return clip((r-Math.max(g*.87,b*.83)+15)/95,0,1)*clip(r/135,0,1);return clip((Math.min(r,g)-b+22)/115,0,1)*clip(Math.min(r,g)/130,0,1);}
+function patchEvidence(img,x,y,rad,k){
+  if(x<rad*2||y<rad*2||x>=img.width-rad*2||y>=img.height-rad*2)return null;
+  const inner=discSamples(img,x,y,rad),med=colorMedian(inner);if(colorScore(med,k)<.25)return null;
+  let edges=[],hits=0,around=[],sectors=new Set(),col=[];
+  // Evaluate boundary across multiple directions. A bright highlight or red spot
+  // affects only some directions and cannot dominate the ring median.
+  for(let j=0;j<32;j++){
+    const a=(j+.15)*tau/32,dx=Math.cos(a),dy=Math.sin(a);
+    const inside=rgb(img,x+dx*rad*.72,y+dy*rad*.72);
+    const outside=rgb(img,x+dx*rad*1.30,y+dy*rad*1.30);
+    const far=rgb(img,x+dx*rad*1.8,y+dy*rad*1.8);
+    if(!inside||!outside)continue;
+    let gradient=colorDistance(inside,outside);
+    // Strong red spots and specularities must not substitute for a perimeter.
+    const sameInside=colorDistance(inside,med);
+    const farDifference=far?colorDistance(med,far):gradient;
+    const support=clip(gradient/.31,0,1.2)*clip((farDifference-.045)/.28,0,1);
+    edges.push(support);around.push(outside);col.push(sameInside);
+    if(support>.32){hits++;sectors.add(Math.floor(j/4));}
+  }
+  if(edges.length<26)return null;
+  const bg=colorMedian(around),contrast=colorDistance(med,bg);
+  const edge=quantile(edges,.45),strong=hits/edges.length,coverage=sectors.size/8;
+  const homogeneity=clip(1-quantile(col,.72)/.48,0,1);
+  const score=(.30*edge+.26*strong+.20*coverage+.14*clip(contrast/.35,0,1)+.10*homogeneity)*colorScore(med,k);
+  return {score,coverage,edge,strong,color:med,bg,contrast,homogeneity};
+}
+function refineSeed(img,point,k,scaleX=1,scaleY=1,options={}){
+ const ox=point.x/scaleX,oy=point.y/scaleY,W=img.width;
+ const maxShift=clip(options.maxShift??Math.round(W*.0072),3,9);
+ const rmin=options.rmin??clip(W/275,2.6,5.0),rmax=options.rmax??clip(W/55,10,19);
+ const centers=[];
+ for(let dy=-maxShift;dy<=maxShift;dy+=1)for(let dx=-maxShift;dx<=maxShift;dx+=1){
+  const x=ox+dx,y=oy+dy;
+  for(let r=rmin;r<=rmax;r+=.9){
+   const ev=patchEvidence(img,x,y,r,k);if(!ev||ev.coverage<.38||ev.strong<.30||ev.contrast<.11)continue;
+   // A coarse tap is a prior, not the selected RGB source.
+   const movement=Math.hypot(dx,dy),score=ev.score-.012*movement-.018*Math.abs(r-(options.expectedRadius??r))/r;
+   if(score>.26)centers.push({x,y,r,score,movement,ev});
+  }
+ }
+ centers.sort((a,b)=>b.score-a.score);
+ // multiple independent detections are required for certainty; among nearly
+ // equivalent hypotheses avoid overstating precision.
+ const best=centers[0];
+ if(!best)return {...point,refined:false,seedQuality:0,seedMethod:'manual-fallback',radius:point.radius||W/150*scaleX,rawX:point.rawX??point.x,rawY:point.rawY??point.y};
+ const alternatives=centers.filter(c=>Math.hypot(c.x-best.x,c.y-best.y)>Math.max(1,best.r*.36)).slice(0,6);
+ const ambiguity=alternatives.length?clip((best.score-alternatives[0].score)/.16,0,1):1;
+ const quality=clip(.15+.43*best.ev.coverage+.24*best.ev.strong+.18*ambiguity,0,1);
+ const enough=best.score>.34&&best.ev.coverage>=.50&&best.ev.strong>=.40;
+ const x=enough?best.x*scaleX:point.x,y=enough?best.y*scaleY:point.y;
+ return {...point,x,y,radius:best.r*(scaleX+scaleY)/2,refined:enough,seedQuality:quality,
+   seedMethod:enough?'perimeter-median':'manual-low-confidence',rawX:point.rawX??point.x,rawY:point.rawY??point.y,
+   evidence:{coverage:best.ev.coverage,score:best.score,strong:best.ev.strong,contrast:best.ev.contrast,
+     ambiguity,body:best.ev.color,background:best.ev.bg},
+   candidates:centers.slice(0,3).map(a=>({x:a.x*scaleX,y:a.y*scaleY,r:a.r*scaleX,score:a.score}))};
+}
+function linear(A,b){const n=b.length,m=A.map((r,i)=>r.slice().concat(b[i]));for(let k=0;k<n;k++){let p=k;for(let i=k+1;i<n;i++)if(Math.abs(m[i][k])>Math.abs(m[p][k]))p=i;if(Math.abs(m[p][k])<1e-10)return null;[m[k],m[p]]=[m[p],m[k]];const d=m[k][k];for(let j=k;j<=n;j++)m[k][j]/=d;for(let i=0;i<n;i++){if(i===k)continue;const q=m[i][k];for(let j=k;j<=n;j++)m[i][j]-=q*m[k][j]}}return m.map(r=>r[n]);}
+function homography(quad){
+ if(!Array.isArray(quad)||quad.length!==4)return null;
+ // Plane coordinate aspect for international 3-cushion: 2:1.
+ const uv=[[0,0],[2,0],[2,1],[0,1]],A=[],b=[];
+ for(let i=0;i<4;i++){const {x,y}=quad[i],u=uv[i][0],v=uv[i][1];if(!Number.isFinite(x+y))return null;
+  A.push([x,y,1,0,0,0,-x*u,-y*u],[0,0,0,x,y,1,-x*v,-y*v]);b.push(u,v)}
+ const h=linear(A,b);if(!h)return null;
+ const cross=(a,b,c)=>(b.x-a.x)*(c.y-a.y)-(b.y-a.y)*(c.x-a.x);
+ if(Math.abs(cross(quad[0],quad[1],quad[2]))<10||Math.abs(cross(quad[1],quad[2],quad[3]))<10)return null;
+ return {h,quad};
+}
+function project(model,x,y){if(!model)return null;let h=model.h,z=h[6]*x+h[7]*y+1;if(Math.abs(z)<1e-9)return null;return {x:(h[0]*x+h[1]*y+h[2])/z,y:(h[3]*x+h[4]*y+h[5])/z};}
+function imageScale(model,x,y){if(!model)return 1;const a=project(model,x,y),b=project(model,x+1,y),c=project(model,x,y+1);if(!a||!b||!c)return 1;return Math.sqrt(Math.abs((b.x-a.x)*(c.y-a.y)-(b.y-a.y)*(c.x-a.x)))||1;}
+function radiusFactor(model,ref,at){if(!model)return 1;return clip(imageScale(model,ref.x,ref.y)/imageScale(model,at.x,at.y),.72,1.40);}
+function collisionWindows(tracks,diameters,frameStep){
+ let events=[];const keys=['white','yellow','red'];let n=Math.min(...keys.map(k=>tracks[k]?.length||0));
+ for(let i=1;i<n-1;i++)for(let a=0;a<3;a++)for(let b=a+1;b<3;b++){
+  let k=keys[a],l=keys[b],p=tracks[k][i],q=tracks[l][i];if(!p?.ok||!q?.ok)continue;
+  const limit=(diameters[k]||14)/2+(diameters[l]||14)/2;
+  const distance=Math.hypot(p.x-q.x,p.y-q.y);if(distance>limit*1.62)continue;
+  const before=tracks[k][i-1],after=tracks[k][i+1];if(!before?.ok||!after?.ok)continue;
+  const u={x:p.x-before.x,y:p.y-before.y},v={x:after.x-p.x,y:after.y-p.y};
+  const dot=(u.x*v.x+u.y*v.y)/(Math.hypot(u.x,u.y)*Math.hypot(v.x,v.y)+1e-6);
+  const impact=dot<.82||Math.hypot(v.x,v.y)>Math.max(5,Math.hypot(u.x,u.y)*1.8);
+  if(impact)events.push({frame:i,time:p.t,balls:[k,l],distance,limit});
+ }
+ return events.filter((e,i)=>i===0||!events.slice(Math.max(0,i-4),i).some(p=>p.balls.join(',')===e.balls.join(',')&&Math.abs(p.frame-e.frame)<3));
+}
+function trajectoryHypotheses(tracks,diameters,frameStep,projector=null){
+ // Symmetric 5-frame evaluation of isolated motion jumps near impacts. Never
+ // edit observed positions; only generate display candidates with diagnostics.
+ const results={events:collisionWindows(tracks,diameters,frameStep),corrections:[],ambiguous:[]};
+ for(const k of ['white','yellow','red']){
+  const a=tracks[k]||[],radius=(diameters[k]||14)/2;
+  for(let i=2;i<a.length-2;i++){
+   const p=a[i],L=a[i-2],R=a[i+2];if(!p?.ok||!L?.ok||!R?.ok||p.reacquired)continue;
+   if(Math.abs(R.t-L.t-4*frameStep)>frameStep*.5)continue;
+   const nearImpact=results.events.some(e=>e.balls.includes(k)&&Math.abs(e.frame-i)<=4);
+   // Find TRUE corners from several observed samples on either side, without
+   // using the suspect middle pixel (which may itself be a specular outlier).
+   const before=a[i-1],after=a[i+1];
+   if(before?.ok&&after?.ok){
+     const lu={x:before.x-L.x,y:before.y-L.y},rv={x:R.x-after.x,y:R.y-after.y};
+     const luLen=Math.hypot(lu.x,lu.y),rvLen=Math.hypot(rv.x,rv.y);
+     const heading=(lu.x*rv.x+lu.y*rv.y)/(luLen*rvLen+1e-9);
+     if(luLen>1.5&&rvLen>1.5&&heading<.77)continue;
+   }
+   const v={x:R.x-L.x,y:R.y-L.y},len=Math.hypot(v.x,v.y);if(len<Math.max(3,radius*.5))continue;
+   // Homography applies to the TABLE PLANE, not the elevated sphere center.
+   // We use it only to reject implausible isolated heading changes, never to
+   // move a detected ball onto a supposedly exact cushion line.
+   if(projector){
+     const lp=project(projector,L.x,L.y),mp=project(projector,p.x,p.y),rp=project(projector,R.x,R.y);
+     if(lp&&mp&&rp){
+       const u={x:mp.x-lp.x,y:mp.y-lp.y},v={x:rp.x-mp.x,y:rp.y-mp.y};
+       const planarCos=(u.x*v.x+u.y*v.y)/(Math.hypot(u.x,u.y)*Math.hypot(v.x,v.y)+1e-10);
+       if(planarCos<-.12)continue; // likely true bounce or severely ambiguous
+     }
+   }
+   const target={x:(L.x+R.x)/2,y:(L.y+R.y)/2};
+   const d=Math.hypot(p.x-target.x,p.y-target.y);
+   const speedL=Math.hypot(p.x-L.x,p.y-L.y),speedR=Math.hypot(R.x-p.x,R.y-p.y);
+   const normal=Math.abs((p.x-target.x)*(-v.y/len)+(p.y-target.y)*(v.x/len));
+   const cap=nearImpact?radius*.28:radius*.66;
+   if(d>Math.max(2.8,cap*.72)&&d<radius*1.8&&normal>Math.max(2.1,radius*.29)&&!nearImpact&&speedL>2&&speedR>2){
+    const amount=clip((normal-1.7)/Math.max(1,radius),0,.65);
+    const nx=target.x-p.x,ny=target.y-p.y;
+    results.corrections.push({ball:k,frame:i,time:p.t,x:p.x+nx*amount,y:p.y+ny*amount,
+      rawX:p.x,rawY:p.y,reason:'bidirectional-geometry',strength:amount});
+   }else if(nearImpact&&d>radius*.72){results.ambiguous.push({ball:k,frame:i,time:p.t,reason:'collision-overlap'});}
+  }
+ }
+ return results;
+}
+return {refineSeed,patchEvidence,homography,project,imageScale,radiusFactor,collisionWindows,trajectoryHypotheses,version:'1.06-experimental'};
+});
+
+</script><script>
+/* Archibald V1.08. Illumination-invariant silhouette evidence.
+ * Per-video, per-frame local cloth reference, never cached camera calibration.
+ * No synthetic detections: a silhouette candidate is only accepted with a
+ * multi-sector boundary, plausible diameter and agreement with observed pixels.
+ */
+(function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;else root.ArchibaldShadow=api;})(typeof globalThis!=='undefined'?globalThis:this,function(){'use strict';
+const PI2=Math.PI*2, clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
+function pixel(im,x,y){
+ const iX=Math.round(x),iY=Math.round(y);if(iX<0||iY<0||iX>=im.width||iY>=im.height)return null;
+ const a=(iY*im.width+iX)*4,d=im.data;return [d[a],d[a+1],d[a+2]];
+}
+function med(a){if(!a.length)return 0;const b=a.slice().sort((x,y)=>x-y);return b[Math.floor(b.length/2)];}
+function medRGB(a){return [0,1,2].map(j=>med(a.map(p=>p[j])))}
+function chroma(a){const sum=a[0]+a[1]+a[2]+.001;return [a[0]/sum,a[1]/sum,a[2]/sum];}
+function colorDelta(a,b){const u=chroma(a),v=chroma(b);return Math.hypot(...u.map((z,i)=>z-v[i]));}
+function spatialDelta(a,b){return Math.hypot(a[0]-b[0],a[1]-b[1],a[2]-b[2])/441.673;}
+function localCloth(img,x,y,r){
+ const far=[];for(let j=0;j<40;j++){
+  const a=PI2*(j+.37)/40,ux=Math.cos(a),uy=Math.sin(a);
+  const c=pixel(img,x+ux*r*1.86,y+uy*r*1.86);if(c)far.push(c);
+ }
+ if(far.length<26)return null;
+ const bg=medRGB(far),spread=med(far.map(c=>colorDelta(c,bg)));
+ // A dark cast shadow can change brightness greatly, but typically retains
+ // felt chromaticity. Very broad lighting stripes -> lower confidence.
+ return {rgb:bg,spread,valid:far.length};
+}
+function sampleEdge(img,cx,cy,r,cloth,angles=40){
+ const points=[],sig=[],N=angles;let sectors=0,total=0,clothSupport=0;
+ const bg=cloth.rgb;
+ for(let j=0;j<N;j++){
+  const a=PI2*(j+.21)/N,dx=Math.cos(a),dy=Math.sin(a);
+  let best=-1,bestR=0,bestFelt=0;
+  for(let f=.67;f<=1.36;f+=.09){
+   const ir=r*(f-.16),orr=r*(f+.16);
+   const inn=pixel(img,cx+dx*ir,cy+dy*ir),out=pixel(img,cx+dx*orr,cy+dy*orr);
+   if(!inn||!out)continue;
+   const ci=colorDelta(inn,bg),co=colorDelta(out,bg);
+   // Brightness is secondary: shaded white and shaded red/yellow still have
+   // a distinctive *chromatic* boundary against the local cloth.
+   const bright=spatialDelta(inn,out),sg=(inn[0]+inn[1]+inn[2])/3;
+   const boundary=(ci-co)*2.9+.30*bright-.16*Math.abs(f-1);
+   const felt=clamp((.20-co)/.17,0,1);
+   const dark=clamp((sg-18)/45,0,1);
+   const score=boundary*(.68+.32*felt)*(.55+.45*dark);
+   if(score>best){best=score;bestR=f*r;bestFelt=felt;}
+  }
+  if(best>.19){
+   points.push({x:cx+Math.cos(a)*bestR,y:cy+Math.sin(a)*bestR,a,w:clamp(best,.16,1)});
+   sectors|=1<<Math.floor(j*8/N);clothSupport+=bestFelt;
+  }
+  sig.push(best);total++;
+ }
+ return {points,sectors,coverage:points.length/N,clothSupport:clothSupport/Math.max(1,points.length),edges:points.length,mean:med(sig)};
+}
+function bitCount(v){let c=0;while(v){v&=v-1;c++}return c;}
+function algebraicCircle(a,b,c){
+ const ax=b.x-a.x,ay=b.y-a.y,bx=c.x-a.x,by=c.y-a.y;
+ const det=2*(ax*by-ay*bx);if(Math.abs(det)<.1)return null;
+ const da=ax*ax+ay*ay,db=bx*bx+by*by;
+ const cx=a.x+(da*by-db*ay)/det,cy=a.y+(db*ax-da*bx)/det;
+ return {x:cx,y:cy,r:Math.hypot(cx-a.x,cy-a.y)};
+}
+function linear3(points){
+ // Work in local coordinates to avoid normal-equation cancellation for
+ // high-resolution pixels. Weighted algebraic least-squares circle.
+ if(points.length<5)return null;
+ const mx=med(points.map(p=>p.x)),my=med(points.map(p=>p.y));
+ let xx=0,xy=0,yy=0,xz=0,yz=0,S=0,sumz=0,sx=0,sy=0;
+ for(const p of points){const u=p.x-mx,v=p.y-my,w=p.w||1,z=u*u+v*v;
+  xx+=w*u*u;xy+=w*u*v;yy+=w*v*v;xz+=w*u*z;yz+=w*v*z;
+  sx+=w*u;sy+=w*v;sumz+=w*z;S+=w;
+ }
+ // Center weighted coordinates first, then solve 2x2 circle center.
+ const A=xx-sx*sx/S,B=xy-sx*sy/S,C=yy-sy*sy/S;
+ const d=xz-sx*sumz/S,e=yz-sy*sumz/S,det=2*(A*C-B*B);
+ if(Math.abs(det)<1e-8)return null;
+ const cu=(d*C-e*B)/det,cv=(e*A-d*B)/det;
+ const r2=(sumz-2*cu*sx-2*cv*sy)/S+cu*cu+cv*cv;
+ return r2>0?{x:mx+cu,y:my+cv,r:Math.sqrt(r2)}:null;
+}
+function fitCircle(edges,origin,r,frameIndex=0){
+ const points=edges.points,n=points.length;
+ if(n<15||bitCount(edges.sectors)<5)return null;
+ const tol=Math.max(.8,r*.165),trials=Math.min(104,n*5);let best=null;
+ for(let i=0;i<trials;i++){
+  // Three widely separated angles to resist adjacent shadow edges.
+  const a=(i*7+frameIndex*3)%n,b=(a+Math.floor(n/3)+i%4)%n,c=(a+Math.floor(n*2/3)+i%5)%n;
+  if(a===b||a===c||b===c)continue;
+  const fit=algebraicCircle(points[a],points[b],points[c]);
+  if(!fit||fit.r<r*.73||fit.r>r*1.33||Math.hypot(fit.x-origin.x,fit.y-origin.y)>Math.max(3.5,r*.76))continue;
+  let support=0,sectors=0,count=0;
+  for(const p of points){const d=Math.abs(Math.hypot(p.x-fit.x,p.y-fit.y)-fit.r);
+   if(d<tol){support+=p.w;count++;sectors|=1<<Math.floor((p.a%PI2)/PI2*8)}
+  }
+  const q=bitCount(sectors);
+  const score=support+.5*q-.22*Math.abs(fit.r-r)-.16*Math.hypot(fit.x-origin.x,fit.y-origin.y);
+  if(q>=5&&count>=13&&(!best||score>best.score))best={...fit,score,sectors};
+ }
+ if(!best)return null;
+ const inliers=points.filter(p=>Math.abs(Math.hypot(p.x-best.x,p.y-best.y)-best.r)<tol);
+ const sub=linear3(inliers);if(sub&&sub.r>=r*.75&&sub.r<=r*1.32&&Math.hypot(sub.x-origin.x,sub.y-origin.y)<Math.max(3.5,r*.78))best={...best,...sub};
+ const residual=med(inliers.map(p=>Math.abs(Math.hypot(p.x-best.x,p.y-best.y)-best.r)));
+ const sectorCount=bitCount(best.sectors);
+ const quality=clamp(.48*inliers.length/Math.max(24,points.length)+.30*sectorCount/8+.22*(1-residual/Math.max(1,tol)),0,1);
+ return {...best,quality,residual,inliers:inliers.length,total:n,sectors:sectorCount,coverage:edges.coverage};
+}
+function evaluate(img,x,y,r,frame=0){
+ if(x-r*2<1||y-r*2<1||x+r*2>=img.width||y+r*2>=img.height)return null;
+ const cloth=localCloth(img,x,y,r);if(!cloth)return null;
+ const edges=sampleEdge(img,x,y,r,cloth,40);
+ if(edges.coverage<.43||bitCount(edges.sectors)<5)return null;
+ const fit=fitCircle(edges,{x,y},r,frame);if(!fit)return null;
+ const displacement=Math.hypot(fit.x-x,fit.y-y);
+ // Gray zones close to a cloth-colored cast shadow are unreliable.
+ const quality=clamp(fit.quality*(.75+.25*edges.clothSupport)*clamp(1.25-cloth.spread, .72,1),0,1);
+ return {...fit,quality,clothSupport:edges.clothSupport,clothSpread:cloth.spread,
+  move:displacement,score:quality-.11*displacement/Math.max(2,r)-.10*Math.abs(fit.r-r)/r};
+}
+function refine(img,point,radius,scaleX=1,scaleY=1,frame=0,opts={}){
+ if(!point||!Number.isFinite(point.x)||!Number.isFinite(point.y))return null;
+ const x=point.x/scaleX,y=point.y/scaleY,r=clamp(radius/Math.max(.5,(scaleX+scaleY)*.5),2.7,22);
+ let options=[];const d=clamp(r*.26,1.0,2.5);
+ for(const [dx,dy] of [[0,0],[d,0],[-d,0],[0,d],[0,-d],[d,d],[-d,d],[-d,d],[d,-d]]){
+  const ev=evaluate(img,x+dx,y+dy,r,frame);if(ev&&ev.quality>.43)options.push(ev);
+ }
+ options.sort((a,b)=>b.score-a.score);if(!options.length)return null;
+ const best=options[0],movement=Math.hypot(best.x-x,best.y-y);
+ if(best.inliers<15||best.sectors<5||best.residual>Math.max(1.1,r*.22)||movement>Math.max(3.5,r*.72))return null;
+ const score=best.quality-.035*movement/Math.max(3,r);
+ if(score<.55)return null;
+ return {x:best.x*scaleX,y:best.y*scaleY,radius:best.r*(scaleX+scaleY)*.5,
+  quality:score,coverage:best.coverage,inliers:best.inliers,residual:best.residual,
+  clothSupport:best.clothSupport,clothSpread:best.clothSpread,method:'shade-resistant-outline'};
+}
+function refineSeed(img,userPoint,k,scaleX=1,scaleY=1,oldSeed=null){
+ const coarse=oldSeed&&Number.isFinite(oldSeed.radius)?oldSeed:null;
+ const radius=coarse?.radius||userPoint.radius||clamp(img.width/125*scaleX,3*scaleX,11*scaleX);
+ const refs=[userPoint];if(coarse&&Math.hypot(userPoint.x-coarse.x,userPoint.y-coarse.y)<Math.max(11,1.15*radius))refs.push(coarse);
+ const candidates=[];
+ for(const ref of refs){const q=refine(img,ref,radius,scaleX,scaleY,0);if(q)candidates.push(q)}
+ if(!candidates.length)return null;
+ candidates.sort((a,b)=>b.quality-a.quality);
+ const best=candidates[0],movement=Math.hypot(best.x-userPoint.x,best.y-userPoint.y);
+ if(movement>Math.max(8*scaleX,radius*1.18))return null;
+ return {...userPoint,x:best.x,y:best.y,radius:best.radius,seedQuality:best.quality,refined:true,
+   seedMethod:'shade-resistant-outline',rawX:userPoint.rawX??userPoint.x,rawY:userPoint.rawY??userPoint.y,
+   shadowEvidence:{inliers:best.inliers,coverage:best.coverage,clothSupport:best.clothSupport,residual:best.residual},
+   evidence:{score:best.quality,coverage:best.coverage,strong:best.clothSupport,contrast:1},
+   candidates:candidates.map(z=>({x:z.x,y:z.y,r:z.radius,score:z.quality}))};
+}
+return {pixel,chroma,colorDelta,localCloth,sampleEdge,fitCircle,evaluate,refine,refineSeed,version:'1.07-experimental'};
+});
+
+</script><script>
+/* Archibald advanced centroid engine (v1.06 experimental).
+ * No network, wasm or dependencies. Same code can be tested in Node and used on Safari.
+ * A circle is estimated from IMAGE BOUNDARIES, not the brightest blob center.
+ * Per-frame candidate coordinates are separate from baseline MOT coordinates.
+ */
+(function(root,factory){
+ const API=factory();
+ if(typeof module==='object'&&module.exports)module.exports=API;
+ else root.ArchibaldAdvanced=API;
+})(typeof globalThis==='object'?globalThis:this,function(){'use strict';
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const TAU=Math.PI*2;
+function rgbAt(img,x,y){
+ const w=img.width,h=img.height,ix=Math.round(x),iy=Math.round(y);
+ if(ix<0||iy<0||ix>=w||iy>=h)return null;
+ const z=(iy*w+ix)*4,d=img.data;return [d[z],d[z+1],d[z+2]];
+}
+function foreground(img,x,y,T,k){
+ const rgb=rgbAt(img,x,y);if(!rgb)return 0;
+ const [r,g,b]=rgb,s=r+g+b+1;
+ const v=[r/s,g/s,b/s];const tc=T.c||[1/3,1/3,1/3];
+ const dist=Math.hypot(v[0]-tc[0],v[1]-tc[1],v[2]-tc[2]);
+ const tol=Math.max(.10,(T.tol||.08)*1.7);
+ let chroma=clamp((tol-dist)/tol,0,1);
+ let value=Math.max(r,g,b)/255;
+ if(k==='white'){
+   const neutral=1-clamp((Math.max(r,g,b)-Math.min(r,g,b))/140,0,1);
+   return chroma*clamp((value-.34)/.36,0,1)*(.6+.4*neutral);
+ }
+ if(k==='red'){
+   const dominance=clamp((r-Math.max(g,b)+12)/100,0,1);
+   return chroma*(.35+.65*dominance)*clamp((value-.20)/.35,0,1);
+ }
+ const yellowness=clamp((Math.min(r,g)-b+12)/95,0,1);
+ return chroma*(.4+.6*yellowness)*clamp((value-.17)/.38,0,1);
+}
+function ringProfile(img,x,y,r,T,k,angles=32){
+ // Try several radial steps and choose the strongest foreground->background edge.
+ // A shaft / rail reflection usually contributes to only one side of the disc.
+ const pts=[];let sectors=0;
+ for(let j=0;j<angles;j++){
+  const a=TAU*(j+.17)/angles,dx=Math.cos(a),dy=Math.sin(a);
+  let best=-Infinity,bestRad=0;
+  for(let t=.67;t<=1.43;t+=.095){
+   const rad=r*t;
+   const inside=foreground(img,x+dx*(rad-.30*r),y+dy*(rad-.30*r),T,k);
+   const outside=foreground(img,x+dx*(rad+.27*r),y+dy*(rad+.27*r),T,k);
+   const transition=inside-outside;
+   // Prefer genuine boundaries at learned radius; resist huge color spots.
+   const score=transition-.15*Math.abs(t-1);
+   if(score>best){best=score;bestRad=rad}
+  }
+  if(best>.21){pts.push({x:x+dx*bestRad,y:y+dy*bestRad,w:Math.min(1,best),a});sectors|=1<<Math.floor(j*8/angles)}
+ }
+ return {pts,sectors};
+}
+function solve3(A,b){
+ let m=A.map((row,i)=>[...row,b[i]]);
+ for(let col=0;col<3;col++){
+  let im=col;for(let r=col+1;r<3;r++)if(Math.abs(m[r][col])>Math.abs(m[im][col]))im=r;
+  if(Math.abs(m[im][col])<1e-8)return null;
+  [m[col],m[im]]=[m[im],m[col]];
+  const div=m[col][col];for(let c=col;c<4;c++)m[col][c]/=div;
+  for(let r=0;r<3;r++)if(r!==col){const f=m[r][col];for(let c=col;c<4;c++)m[r][c]-=f*m[col][c]}
+ }
+ return m.map(row=>row[3]);
+}
+function circleThree(p,q,s){
+ const ax=q.x-p.x,ay=q.y-p.y,bx=s.x-p.x,by=s.y-p.y;
+ const det=2*(ax*by-ay*bx);if(Math.abs(det)<.3)return null;
+ const qd=ax*ax+ay*ay,sd=bx*bx+by*by;
+ const cx=p.x+(qd*by-sd*ay)/det,cy=p.y+(sd*ax-qd*bx)/det;
+ return {x:cx,y:cy,r:Math.hypot(cx-p.x,cy-p.y)};
+}
+function circleLeastSquares(pts){
+ const A=[[0,0,0],[0,0,0],[0,0,0]],B=[0,0,0];
+ for(const p of pts){const w=p.w||1,x=p.x,y=p.y,z=x*x+y*y,v=[2*x,2*y,1];
+  for(let i=0;i<3;i++){B[i]+=v[i]*z*w;for(let j=0;j<3;j++)A[i][j]+=v[i]*v[j]*w;}}
+ const s=solve3(A,B);if(!s)return null;
+ const r2=s[2]+s[0]*s[0]+s[1]*s[1];
+ return r2>0?{x:s[0],y:s[1],r:Math.sqrt(r2)}:null;
+}
+function bitCount(v){let c=0;while(v){v&=v-1;c++}return c}
+function ransacCircle(points,origin,r,frameIndex=0){
+ const n=points.length;if(n<11)return null;
+ const tolerance=Math.max(1.0,.18*r);
+ const tests=Math.min(96,n*4);let best=null;
+ for(let iter=0;iter<tests;iter++){
+  const i=(iter*7+frameIndex*3)%n,
+        j=(iter*13+7+frameIndex)%n,
+        k=(iter*19+17+frameIndex*2)%n;
+  if(i===j||i===k||j===k)continue;
+  const c=circleThree(points[i],points[j],points[k]);
+  if(!c||c.r<r*.69||c.r>r*1.44||Math.hypot(c.x-origin.x,c.y-origin.y)>r*.96)continue;
+  let support=0,squares=0,sectors=0;
+  for(const p of points){const d=Math.abs(Math.hypot(p.x-c.x,p.y-c.y)-c.r);
+   if(d<tolerance){support+=(p.w||1);squares+=d*d;sectors|=1<<Math.floor(p.a/TAU*8)}}
+  if(bitCount(sectors)<4)continue;
+  const score=support-.13*squares/Math.max(1,support)-.5*Math.abs(c.r-r)-.12*Math.hypot(c.x-origin.x,c.y-origin.y);
+  if(!best||score>best.score)best={...c,score,support,sectors};
+ }
+ if(!best)return null;
+ // Weighted least squares on the RANSAC inliers, then recompute support.
+ const inliers=points.filter(p=>Math.abs(Math.hypot(p.x-best.x,p.y-best.y)-best.r)<tolerance);
+ const refined=circleLeastSquares(inliers);
+ if(refined&&refined.r>=r*.68&&refined.r<=r*1.45&&Math.hypot(refined.x-origin.x,refined.y-origin.y)<r*.95)best={...best,...refined};
+ let residual=0;for(const p of inliers)residual+=Math.abs(Math.hypot(p.x-best.x,p.y-best.y)-best.r);
+ best.inliers=inliers.length;best.total=n;best.residual=residual/Math.max(1,inliers.length);
+ best.quality=clamp(.55*(inliers.length/32)+.3*bitCount(best.sectors)/8+.15*(1-best.residual/Math.max(1,tolerance)),0,1);
+ return best;
+}
+function refine(img,point,T,k='white',scaleX=1,scaleY=1,frameIndex=0){
+ if(!point?.ok||!T)return null;
+ const origin={x:point.x/scaleX,y:point.y/scaleY};
+ const r=clamp(T.radius||6,3.0,21),options=[];
+ // Multiple center hypotheses, including original and displaced pixel
+ // centers. Avoid making up a shape where the boundary is occluded.
+ const s=Math.max(1.2,Math.min(2.5,r*.24));
+ const probes=[[0,0],[s,0],[-s,0],[0,s],[0,-s],[s,s],[-s,s],[s,-s],[-s,-s]];
+ for(const [dx,dy] of probes){
+  const cx=origin.x+dx,cy=origin.y+dy;
+  if(cx<r*1.4||cy<r*1.4||cx>img.width-r*1.4||cy>img.height-r*1.4)continue;
+  const scan=ringProfile(img,cx,cy,r,T,k,32);
+  if(scan.pts.length<11||bitCount(scan.sectors)<4)continue;
+  const fit=ransacCircle(scan.pts,origin,r,frameIndex);
+  if(fit&&fit.quality>.28){
+   const movement=Math.hypot(fit.x-origin.x,fit.y-origin.y);
+   const score=fit.quality-.045*movement/r-.09*Math.abs(fit.r-r)/r;
+   options.push({...fit,score,movement});
+  }
+ }
+ options.sort((a,b)=>b.score-a.score);
+ if(!options.length)return null;
+ const best=options[0];
+ if(best.inliers<10||best.quality<.38||best.residual>Math.max(1.2,r*.20))return null;
+ if(best.movement>Math.max(2.5,r*.70))return null;
+ return {x:best.x*scaleX,y:best.y*scaleY,radius:best.r*(scaleX+scaleY)*.5,
+  quality:best.quality,coverage:best.total/32,inliers:best.inliers,residual:best.residual,
+  candidates:options.slice(0,3).map(c=>({x:c.x*scaleX,y:c.y*scaleY,quality:c.quality}))};
+}
+function temporal(tracks,key,radius=7,frameStep=1/30){
+ // Multi-hypothesis (raw/contour) batch center optimization. We evaluate a
+ // symmetric nine-frame window, and only use an SG quadratic where BOTH sides
+ // of the trajectory support smooth motion. This is not a Kalman prediction.
+ const a=tracks[key]||[];let changed=0,considered=0;
+ const baseline=p=>({x:Number.isFinite(p.drawX)?p.drawX:p.x,y:Number.isFinite(p.drawY)?p.drawY:p.y});
+ const cap=clamp(radius*.72,2.0,6.5),sg9=[-21,14,39,54,59,54,39,14,-21].map(v=>v/231);
+ const geomOrBaseline=p=>{
+  const b=baseline(p),g=p.geometry;
+  if(!g||g.quality<.67||g.coverage<.38||Math.hypot(g.x-b.x,g.y-b.y)>cap)return b;
+  return {x:g.x,y:g.y};
+ };
+ let totalGeometry=0;
+ for(const p of a){delete p.advancedX;delete p.advancedY;delete p.advancedMethod;
+  if(p.ok&&p.geometry&&p.geometry.quality>.67)totalGeometry++;
+ }
+ for(let i=4;i<a.length-4;i++){
+  const p=a[i];if(!p.ok||p.reacquired)continue;
+  const window=a.slice(i-4,i+5);
+  if(window.some((q,j)=>!q.ok||q.reacquired||Math.abs(q.t-(p.t+(j-4)*frameStep))>frameStep*.43))continue;
+  const original=window.map(baseline);
+  const candidates=window.map(geomOrBaseline);
+  const av={x:original[4].x-original[0].x,y:original[4].y-original[0].y},
+        bv={x:original[8].x-original[4].x,y:original[8].y-original[4].y};
+  const as=Math.hypot(av.x,av.y),bs=Math.hypot(bv.x,bv.y);
+  if(as<Math.max(2.4,radius*.40)||bs<Math.max(2.4,radius*.40)||Math.max(as,bs)>Math.min(as,bs)*4.5)continue;
+  const cosine=(av.x*bv.x+av.y*bv.y)/(as*bs);
+  if(cosine<.89)continue; // True cushion impact, sudden start or collision.
+  const neighborCollision=Object.keys(tracks).filter(k=>k!==key).some(k=>{
+   const q=tracks[k][i];return q&&q.ok&&Math.hypot(q.x-p.x,q.y-p.y)<radius*3.8;
+  });if(neighborCollision)continue;
+  // Additional impact guard: a turn anywhere within this 9-frame window
+  // must not be rounded away, even if distant endpoint headings look similar.
+  let impactNearby=false;
+  const dirLeft={x:candidates[2].x-candidates[0].x,y:candidates[2].y-candidates[0].y};
+  const dirRight={x:candidates[8].x-candidates[6].x,y:candidates[8].y-candidates[6].y};
+  const dirCos=(dirLeft.x*dirRight.x+dirLeft.y*dirRight.y)/(Math.max(1,Math.hypot(dirLeft.x,dirLeft.y)*Math.hypot(dirRight.x,dirRight.y)));
+  for(let j=2;j<=6;j++){
+   const u={x:candidates[j].x-candidates[j-2].x,y:candidates[j].y-candidates[j-2].y};
+   const v={x:candidates[j+2].x-candidates[j].x,y:candidates[j+2].y-candidates[j].y};
+   const um=Math.hypot(u.x,u.y),vm=Math.hypot(v.x,v.y);
+   if(um>Math.max(2.5,radius*.40)&&vm>Math.max(2.5,radius*.40)
+       &&(u.x*v.x+u.y*v.y)/(um*vm)<.35&&dirCos<.86){impactNearby=true;break}
+  }
+  if(!impactNearby && window.filter(q=>q.geometry&&q.geometry.quality>.75).length>=7){
+   for(let j=1;j<=7;j++){
+    const u={x:candidates[j].x-candidates[j-1].x,y:candidates[j].y-candidates[j-1].y};
+    const v={x:candidates[j+1].x-candidates[j].x,y:candidates[j+1].y-candidates[j].y};
+    const um=Math.hypot(u.x,u.y),vm=Math.hypot(v.x,v.y);
+    if(um>Math.max(2.0,radius*.25)&&vm>Math.max(2.0,radius*.25)
+      &&(u.x*v.x+u.y*v.y)/(um*vm)<.25){impactNearby=true;break}
+   }
+  }
+  if(impactNearby)continue;
+  const good=candidates.filter((c,j)=>c!==original[j]);
+  const confident=window.filter(q=>q.geometry&&q.geometry.quality>=.67).length;
+  if(confident<6)continue;
+  let tx=0,ty=0;
+  for(let j=0;j<9;j++){tx+=sg9[j]*candidates[j].x;ty+=sg9[j]*candidates[j].y}
+  const current=baseline(p);
+  // Do not alter the along-path timing beyond the observed sample movement.
+  const chord={x:candidates[8].x-candidates[0].x,y:candidates[8].y-candidates[0].y};
+  const len=Math.hypot(chord.x,chord.y);if(len<4)continue;
+  const nx=-chord.y/len,ny=chord.x/len;
+  // Normal-component correction is the most important for visual jitter.
+  // The along-track correction is limited because an impact changes velocity.
+  const dx=tx-current.x,dy=ty-current.y;
+  const along=dx*chord.x/len+dy*chord.y/len;
+  const cross=dx*nx+dy*ny;
+  let x=current.x+clamp(along,-cap*.38,cap*.38)*chord.x/len+clamp(cross,-cap,cap)*nx;
+  let y=current.y+clamp(along,-cap*.38,cap*.38)*chord.y/len+clamp(cross,-cap,cap)*ny;
+  const diff=Math.hypot(x-current.x,y-current.y);
+  considered++;
+  if(diff>.12){p.advancedX=x;p.advancedY=y;p.advancedMethod='RANSAC-circle + nine-frame hypothesis fit';changed++}
+ }
+ return {considered,changed,geometryPoints:totalGeometry};
+}
+
+return {foreground,ringProfile,ransacCircle,refine,temporal,version:'1.06-experimental'};
+});
+
+</script><script>
+(()=>{'use strict';const $=id=>document.getElementById(id),v=$('video'),ov=$('overlay'),ctx=ov.getContext('2d'),scan=$('scan'),sc=scan.getContext('2d',{willReadFrequently:true});const colors={white:'#ffffff',yellow:'#ffdf36',red:'#ff4c4c'},names={white:'흰',yellow:'노란',red:'빨간'};let templates={},referenceFrame=null,sourceFPS=30,exporting=false,exportStop=null,previewMode=false,pointDraft=null;let zone=null,zoneEditing=false,dragCorner=-1,zoneConfirmed=false;let seeds={},tracks={white:[],yellow:[],red:[]},picking=null,working=false,stop=false,url=null,frameStep=1/30,analyzed=false;const keys=Object.keys(colors);const status=s=>$('status').textContent=s;const enable=()=>{let loaded=!!v.videoWidth;['play','back','forward','preview','white','yellow','red','autoZone','editZone','resetZone'].forEach(id=>$(id).disabled=!loaded);$('analyze').disabled=!loaded||working||keys.some(k=>!seeds[k]);$('seek').disabled=!loaded;['json','csv'].forEach(id=>$(id).disabled=!analyzed);$('export').disabled=!loaded||!analyzed||exporting;$('preview').disabled=!loaded||!analyzed||working};const fmt=t=>{t=Math.max(0,t||0);return `${String(Math.floor(t/60)).padStart(2,'0')}:${String(Math.floor(t%60)).padStart(2,'0')}.${String(Math.floor((t%1)*100)).padStart(2,'0')}`};const resize=()=>{if(!v.videoWidth)return;ov.width=v.videoWidth;ov.height=v.videoHeight;scan.width=Math.min(960,v.videoWidth);scan.height=Math.round(v.videoHeight*scan.width/v.videoWidth);draw()};function effectiveCenter(p,stable){
+ if(!p)return {x:0,y:0};
+ if($('collisionReview').checked&&Number.isFinite(p.collisionX)&&Number.isFinite(p.collisionY))
+   return {x:p.collisionX,y:p.collisionY};
+ if($('advancedCenter').checked&&Number.isFinite(p.advancedX)&&Number.isFinite(p.advancedY))
+   return {x:p.advancedX,y:p.advancedY};
+ return {x:stable&&Number.isFinite(p.drawX)?p.drawX:p.x,
+         y:stable&&Number.isFinite(p.drawY)?p.drawY:p.y};
+}
+function refreshAdvancedDisplay(){
+ smoothLayerCache.clear();draw();
+}
+function draw(){
+ if(!ov.width)return;ctx.clearRect(0,0,ov.width,ov.height);
+ const alpha=+$('alpha').value/100,width=+$('thick').value*ov.width/1108;
+ const visible=t=>$('full').checked||t<=v.currentTime+.035;
+ const traceStyle=$('traceStyle').value,stable=$('stabilize').checked;
+ const smoothLevel=+$('smoothLevel').value;
+ for(const k of keys){
+  const layer=smoothLevel>0?getSmoothLayer(k,smoothLevel,stable):null;
+  const xy=p=>{const c=layer?.byPoint.get(p);return c||effectiveCenter(p,stable)};
+  const points=previewMode?tracks[k].filter(p=>visible(p.t)):[];
+  ctx.strokeStyle=colors[k];ctx.lineWidth=width;ctx.lineJoin='round';ctx.lineCap='butt';ctx.globalAlpha=alpha;
+  // Render genuine detections as continuous paths.  An unobserved span is a
+  // distinct, lower-opacity SOLID connector only after both endpoints are
+  // validated. Reacquired positions can be bridged when plausible; do not
+  // manufacture additional detections or use the table boundary as a bounce.
+  // Visually stationary detections are collapsed so the initial ball location
+  // does not accumulate hundreds of opaque micro-strokes.
+  const passSeconds=.85,passDistance=Math.max(95,ov.width*.155);
+  let last=null,inkLast=null,runStart=null,runEnd=null,runDistance=0,runPoints=0;
+  const tinyMotion=Math.max(1.05,width*.19);
+  function flush(){if(runPoints>1)ctx.stroke();runStart=null;runEnd=null;runDistance=0;runPoints=0}
+  function pushLine(a,b,t,handles){
+   if(!runStart){ctx.beginPath();ctx.moveTo(a.x,a.y);runStart=t;runPoints=1;}
+   if(handles)ctx.bezierCurveTo(handles.c1x,handles.c1y,handles.c2x,handles.c2y,b.x,b.y);
+   else ctx.lineTo(b.x,b.y);
+   runPoints++;runDistance+=Math.hypot(b.x-a.x,b.y-a.y);runEnd=t;
+   if(runEnd-runStart>=passSeconds||runDistance>=passDistance){
+    flush();ctx.beginPath();ctx.moveTo(b.x,b.y);runStart=t;runEnd=t;runPoints=1;
+   }
+  }
+  function connectorAllowed(p,q,dt,dist){
+   if(!$('gaps').checked||dt<=0||dt>1.20)return false;
+   if(dist<.45||dist>Math.max(110,ov.width*.54))return false;
+   // Both ends must be detected, inside the user-edited table area (+ margin).
+   // Re-acquired IDs have already received the two-frame MOT verification.
+   if(!p.ok||!q.ok||!admissible(p.x,p.y,k)||!admissible(q.x,q.y,k))return false;
+   if((p.confidence??.5)<.18||(q.confidence??.5)<.18)return false;
+   if(dist/dt>Math.max(1550,ov.width*2.1))return false;
+   for(let u=.25;u<1;u+=.25){
+    if(!admissible(p.x+(q.x-p.x)*u,p.y+(q.y-p.y)*u,k))return false;
+   }
+   return true;
+  }
+  function bridge(p,q){
+   const a=xy(p),b=xy(q),dt=q.t-p.t,dist=Math.hypot(b.x-a.x,b.y-a.y);
+   if(!connectorAllowed(p,q,dt,Math.hypot(q.x-p.x,q.y-p.y)))return;
+   // V1.08 · Experimental: tapered alpha, solid continuous line, never a dashed gap.
+   // Longer uncertain spans fade more; short gaps keep a natural join.
+   const confidence=Math.min(p.confidence??.5,q.confidence??.5);
+   const fade=Math.max(.18,Math.min(.50, .54 - .28*Math.min(1,dt/.70)))*Math.max(.75,Math.min(1,confidence/.55));
+   const gradient=ctx.createLinearGradient(a.x,a.y,b.x,b.y);
+   const rgb=k==='white'?'255,255,255':k==='yellow'?'255,223,54':'255,76,76';
+   gradient.addColorStop(0,`rgba(${rgb},1)`);
+   gradient.addColorStop(.22,`rgba(${rgb},${fade.toFixed(3)})`);
+   gradient.addColorStop(.78,`rgba(${rgb},${fade.toFixed(3)})`);
+   gradient.addColorStop(1,`rgba(${rgb},1)`);
+   ctx.save();ctx.globalAlpha=alpha;ctx.strokeStyle=gradient;ctx.lineWidth=width;
+   ctx.lineCap='butt';ctx.setLineDash([]);ctx.beginPath();ctx.moveTo(a.x,a.y);
+   // With missing evidence a straight soft connector is an indication,
+   // NOT a reconstructed cushion bounce. Never extrapolate beyond endpoints.
+   ctx.lineTo(b.x,b.y);ctx.stroke();ctx.restore();
+  }
+  for(const p of points){
+   if(!p.ok)continue;
+   if(!last){last=p;inkLast=p;continue}
+   const dt=p.t-last.t,dist=Math.hypot(p.x-last.x,p.y-last.y);
+   const contiguous=!p.reacquired&&dt<=frameStep*1.6&&dist<Math.max(90,ov.width*.13);
+   if(contiguous){
+    const a=xy(inkLast),b=xy(p);
+    // Keep the first point at ordinary line opacity, without a bright blob
+    // caused by repeatedly drawing the same stationary coordinates.
+    if(Math.hypot(b.x-a.x,b.y-a.y)>=tinyMotion){
+     ctx.strokeStyle=colors[k];ctx.globalAlpha=alpha;ctx.setLineDash([]);
+     pushLine(a,b,p.t,inkLast===last&&layer?curveHandles(layer,last,p):null);
+     inkLast=p;
+    }
+   }else{
+    flush();bridge(last,p);inkLast=p;
+   }
+   last=p;
+  }
+  flush();
+  ctx.globalAlpha=1;ctx.setLineDash([]);
+  if(traceStyle==='all'){
+   ctx.save();ctx.fillStyle=colors[k];ctx.globalAlpha=alpha*.85;
+   for(const p of points){if(!p.ok)continue;const c=xy(p);ctx.beginPath();ctx.arc(c.x,c.y,Math.max(1.35,width*.58),0,Math.PI*2);ctx.fill()}
+   ctx.restore();
+  }else if(traceStyle==='current'){
+   const p=points.filter(p=>p.ok).at(-1)||(!previewMode?seeds[k]:null);
+   if(p&&(!previewMode||v.currentTime-p.t<=Math.max(.12,frameStep*2))){
+    // The first/current ball marker is no longer drawn at 100% opacity.
+    // Match both the trajectory color and its selected alpha; no dark rim.
+    const c=xy(p);ctx.save();ctx.globalAlpha=alpha;ctx.beginPath();
+    ctx.arc(c.x,c.y,Math.max(width*.50,ov.width*.003),0,Math.PI*2);
+    ctx.fillStyle=colors[k];ctx.fill();ctx.restore();
+   }
+  }
+ }
+ if(zone&&!exporting){ctx.save();ctx.globalAlpha=zoneEditing?.95:.5;ctx.strokeStyle='#5fffc3';ctx.lineWidth=Math.max(2,ov.width/500);ctx.setLineDash(zoneEditing?[]:[8,6]);ctx.beginPath();zone.forEach((p,i)=>i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y));ctx.closePath();ctx.stroke();ctx.setLineDash([]);if(zoneEditing)zone.forEach((p,i)=>{ctx.beginPath();ctx.arc(p.x,p.y,Math.max(9,ov.width*.012),0,Math.PI*2);ctx.fillStyle='#5fffc3';ctx.fill();ctx.fillStyle='#102b26';ctx.font=`bold ${Math.max(12,ov.width*.014)}px sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(i+1,p.x,p.y)});ctx.restore()}
+ if(picking){ctx.fillStyle='#fff';ctx.font=`bold ${Math.max(14,ov.width*.018)}px sans-serif`;ctx.fillText(`${names[picking]} 공을 터치하세요`,15,30)}
+}
+
+// V1.08 · Experimental: optional collision-aware visual trajectory smoothing (0 = bitwise legacy presentation).
+// It never touches raw x/y detections, track identity, confidence, or missing-frame flags.
+const smoothLayerCache=new Map();
+function solveWeightedPolynomial(samples,degree){
+ const n=degree+1,A=Array.from({length:n},()=>Array(n+1).fill(0));
+ for(const s of samples){
+  const powers=[1,s.u,s.u*s.u];
+  for(let r=0;r<n;r++){
+   for(let c=0;c<n;c++)A[r][c]+=s.weight*powers[r]*powers[c];
+   A[r][n]+=s.weight*powers[r]*s.value;
+  }
+ }
+ for(let c=0;c<n;c++){
+  let pivot=c;for(let r=c+1;r<n;r++)if(Math.abs(A[r][c])>Math.abs(A[pivot][c]))pivot=r;
+  if(Math.abs(A[pivot][c])<1e-8)return null;
+  if(c!==pivot)[A[c],A[pivot]]=[A[pivot],A[c]];
+  const d=A[c][c];for(let z=c;z<=n;z++)A[c][z]/=d;
+  for(let r=0;r<n;r++)if(r!==c){const f=A[r][c];for(let z=c;z<=n;z++)A[r][z]-=f*A[c][z]}
+ }
+ return A.map(row=>row[n]);
+}
+function robustLocalFit(segment,j,windowRadius,degree){
+ const region=[];
+ for(let t=Math.max(0,j-windowRadius);t<=Math.min(segment.length-1,j+windowRadius);t++){
+  const u=t-j,wt=Math.exp(-.5*(u/(windowRadius*.75))**2);
+  const p=segment[t];region.push({u,base:wt,weight:wt,x:p.x,y:p.y});
+ }
+ const robustScale=Math.max(1.8,Math.min(3.8,windowRadius*.46));
+ let cx=null,cy=null;
+ for(let iteration=0;iteration<3;iteration++){
+  cx=solveWeightedPolynomial(region.map(s=>({...s,value:s.x})),degree);
+  cy=solveWeightedPolynomial(region.map(s=>({...s,value:s.y})),degree);
+  if(!cx||!cy)return null;
+  for(const s of region){
+   let px=0,py=0,power=1;
+   for(let r=0;r<cx.length;r++){px+=cx[r]*power;py+=cy[r]*power;power*=s.u}
+   const residual=Math.hypot(px-s.x,py-s.y);
+   s.weight=s.base*Math.min(1,robustScale/Math.max(residual,.001));
+  }
+ }
+ return {x:cx[0],y:cy[0]};
+}
+function getSmoothLayer(k,level,stable){
+ const a=tracks[k],cacheKey=`${k}/${level}/${stable?1:0}/${$('advancedCenter').checked?1:0}`;
+ const old=smoothLayerCache.get(cacheKey);
+ if(old&&old.source===a&&old.length===a.length)return old;
+ const byPoint=new WeakMap(),coords=new Array(a.length),segments=[];
+ const radius=Math.max(5,(templates[k]?.radius||6)*(v.videoWidth/Math.max(1,scan.width)));
+ const lengthUnit=Math.max(.6,ov.width/1108);
+ // Adjacent missing data, ID reacquisition, and large detection leaps break paths.
+ let s=[];
+ for(let i=0;i<a.length;i++){
+  const p=a[i],q=s.length?a[s[s.length-1]]:null;
+  const separated=!p.ok||p.reacquired||(q&&(p.t-q.t>frameStep*1.65||Math.hypot(p.x-q.x,p.y-q.y)>Math.max(90,ov.width*.13)));
+  if(separated&&s.length){segments.push(s);s=[]}
+  if(p.ok)s.push(i);
+ }
+ if(s.length)segments.push(s);
+ const windowRadius=[0,2,4,6][level],degree=level===1?1:2;
+ const mix=[0,.52,.79,.93][level],cap=[0,2.0,3.8,5.8][level]*lengthUnit;
+ for(const indices of segments){
+  const pts=indices.map(idx=>{
+   const p=a[idx];return effectiveCenter(p,stable);
+  });
+  const protect=new Set();
+  const guard=j=>{for(let d=-Math.max(2,windowRadius-1);d<=Math.max(2,windowRadius-1);d++)if(j+d>=0&&j+d<pts.length)protect.add(j+d)};
+  // Never smooth the ends of each observed run or join across missing evidence.
+  for(let j=0;j<Math.min(windowRadius,pts.length);j++){protect.add(j);protect.add(pts.length-1-j)}
+  for(let j=3;j<pts.length-3;j++){
+   const prev=pts[j-1],before=pts[j-3],after=pts[j+1],next=pts[j+3];
+   const dx1=prev.x-before.x,dy1=prev.y-before.y,dx2=next.x-after.x,dy2=next.y-after.y;
+   const speed1=Math.hypot(dx1,dy1),speed2=Math.hypot(dx2,dy2);
+   const meaningful=Math.min(speed1,speed2)>Math.max(3.5*lengthUnit,radius*.5);
+   if(meaningful){
+    const cosine=(dx1*dx2+dy1*dy2)/(speed1*speed2);
+    if(cosine<.80&&Math.max(speed1,speed2)<Math.min(speed1,speed2)*5)guard(j);
+   }
+   if((speed1<Math.max(1.5,radius*.2)&&speed2>Math.max(9,radius*1.3))||
+      (speed2<Math.max(1.5,radius*.2)&&speed1>Math.max(9,radius*1.3)))guard(j);
+  }
+  // Protect close ball contacts irrespective of the table boundary estimate.
+  for(let j=0;j<pts.length;j++){
+   const i=indices[j],p=a[i];
+   for(const other of keys){
+    if(other===k)continue;
+    const otherA=tracks[other];let q=otherA[i];
+    if(!q||Math.abs(q.t-p.t)>frameStep*.6)q=otherA.find(item=>item.ok&&Math.abs(item.t-p.t)<=frameStep*.45);
+    if(q&&q.ok){
+     const r2=Math.max(5,(templates[other]?.radius||6)*(v.videoWidth/Math.max(1,scan.width)));
+     if(Math.hypot(q.x-p.x,q.y-p.y)<2.35*(radius+r2)){guard(j);break}
+    }
+   }
+  }
+  for(let j=0;j<pts.length;j++){
+   const i=indices[j],p=a[i],base=pts[j];let xx=base.x,yy=base.y;
+   if(!protect.has(j)&&j>=windowRadius&&j<pts.length-windowRadius){
+    const fit=robustLocalFit(pts,j,windowRadius,degree);
+    if(fit){
+     const dx=fit.x-base.x,dy=fit.y-base.y,dist=Math.hypot(dx,dy);
+     const allowed=Math.min(cap,Math.max(1.25,radius*(level===1?.26:level===2?.43:.60)));
+     const factor=dist>1e-6?mix*Math.min(1,allowed/dist):0;
+     xx+=dx*factor;yy+=dy*factor;
+    }
+   }
+   const c={x:xx,y:yy,protected:protect.has(j),segId:segments.indexOf(indices),index:i};
+   coords[i]=c;byPoint.set(p,c);
+  }
+ }
+
+ // V1.08 · Experimental: compensate a ONE-FRAME centroid excursion immediately after a real
+ // ball-ball impact.  The original detector samples (p.x/y) remain untouched.
+ // A legitimate impact must stay sharp; only a low-confidence, off-axis
+ // departure sample is visually moved toward the post-impact movement ray.
+ // This intentionally does NOT interpolate arbitrary missing spans.
+ if(level>0){
+  for(const indices of segments){
+   const getBase=j=>{const p=a[indices[j]];return effectiveCenter(p,stable);};
+   for(let j=4;j+4<indices.length;j++){
+    const before=a[indices[j-1]],first=a[indices[j]];
+    const anchor=getBase(j-1),candidate=getBase(j),later=getBase(j+3);
+    let stationary=true;
+    for(let n=j-4;n<j;n++){
+     if(Math.hypot(getBase(n).x-anchor.x,getBase(n).y-anchor.y)>Math.max(2.5,radius*.24)){
+      stationary=false;break;
+     }
+    }
+    if(!stationary)continue;
+    const departure=Math.hypot(candidate.x-anchor.x,candidate.y-anchor.y);
+    const total=Math.hypot(later.x-anchor.x,later.y-anchor.y);
+    if(departure<Math.max(6,radius*.8)||total<Math.max(25,radius*2.2))continue;
+    const ux=(later.x-anchor.x)/total,uy=(later.y-anchor.y)/total;
+    const projection=(candidate.x-anchor.x)*ux+(candidate.y-anchor.y)*uy;
+    if(projection<2||projection>total+radius*.5)continue;
+    const cross=(pt)=>Math.abs((pt.x-anchor.x)*uy-(pt.y-anchor.y)*ux);
+    const err=cross(candidate),afterErr=Math.max(cross(getBase(j+1)),cross(getBase(j+2)));
+    if(err<Math.max(5,radius*.46)||err-afterErr<Math.max(2.4,radius*.20))continue;
+    // Only allow this exceptional correction when there is evidence of a
+    // real object contact or a genuinely low-confidence first moving point.
+    const closeBall=keys.some(other=>{
+     if(other===k)return false;
+     const index=indices[j-1],time=before.t;
+     const q=tracks[other][index];if(!q||!q.ok||Math.abs(q.t-time)>frameStep*.7)return false;
+     const qRadius=Math.max(5,(templates[other]?.radius||6)*(v.videoWidth/Math.max(1,scan.width)));
+     return Math.hypot(q.x-before.x,q.y-before.y)<2.9*(radius+qRadius);
+    });
+    const lowConfidence=Number.isFinite(first.confidence)&&Number.isFinite(before.confidence)&&
+      first.confidence<before.confidence-.10;
+    if(!closeBall&&!lowConfidence)continue;
+    const original=coords[indices[j]];
+    if(!original)continue;
+    const onRay={x:anchor.x+ux*projection,y:anchor.y+uy*projection};
+    const dx=onRay.x-candidate.x,dy=onRay.y-candidate.y,dist=Math.hypot(dx,dy);
+    const maxShift=radius*[0,.55,.85,1.05][level];
+    const strength=[0,.53,.80,.96][level];
+    const factor=Math.min(strength,maxShift/Math.max(.001,dist));
+    original.x=candidate.x+dx*factor;original.y=candidate.y+dy*factor;
+    original.launchOutlierCorrected=true;
+    // Do not 'round off' a collision; its stationary/contact anchor is fixed.
+    // One exceptional post-contact sample may still receive a smoothed line.
+    original.protected=false;
+    const anchorCoord=coords[indices[j-1]];if(anchorCoord)anchorCoord.protected=true;
+    break; // At most one post-launch adjustment per observed run.
+   }
+  }
+ }
+ const layer={source:a,length:a.length,byPoint,coords,level};
+ smoothLayerCache.set(cacheKey,layer);return layer;
+}
+function curveHandles(layer,p,q){
+ const a=layer.byPoint.get(p),b=layer.byPoint.get(q);
+ if(!a||!b||a.protected||b.protected||a.segId!==b.segId)return null;
+ const dist=Math.hypot(b.x-a.x,b.y-a.y);
+ if(dist<.5)return null;
+ const left=layer.coords[a.index-1],right=layer.coords[b.index+1];
+ const before=left&&left.segId===a.segId&&!left.protected?left:a;
+ const after=right&&right.segId===b.segId&&!right.protected?right:b;
+ let t1x=(b.x-before.x)/(before===a?1:2),t1y=(b.y-before.y)/(before===a?1:2);
+ let t2x=(after.x-a.x)/(after===b?1:2),t2y=(after.y-a.y)/(after===b?1:2);
+ const along=(dx,dy)=>((dx*(b.x-a.x)+dy*(b.y-a.y))/(dist*dist));
+ // A reverse tangent is a true corner or detection ambiguity: keep a straight edge.
+ if(along(t1x,t1y)<.05||along(t2x,t2y)<.05)return null;
+ const factor=[0,.16,.19,.22][layer.level];
+ const lim=dist*.42;
+ const clamp=(dx,dy)=>{const m=Math.hypot(dx,dy),s=m>lim?lim/m:1;return [dx*s,dy*s]};
+ const [dx1,dy1]=clamp(t1x*factor,t1y*factor),[dx2,dy2]=clamp(t2x*factor,t2y*factor);
+ return {c1x:a.x+dx1,c1y:a.y+dy1,c2x:b.x-dx2,c2y:b.y-dy2};
+}
+$('file').onchange=e=>{const f=e.target.files[0];if(!f)return;firstFrameReady=false;loadGeneration++;v.pause();v.removeAttribute('poster');v.currentTime=0;if(url)URL.revokeObjectURL(url);url=URL.createObjectURL(f);v.src=url;v.load();seeds={};templates={};referenceFrame=null;smoothLayerCache.clear();advancedStats={};collisionStats={events:0,candidates:0,corrected:0,recovered:0};$('collisionStatus').textContent='충돌 재검증 대기';$('shadowStatus').textContent='그림자·반사광 외곽 검증 대기';$('yellowStatus').textContent='노란 공 중심 재검증 대기';$('advancedStatus').textContent='분석 대기';$('collisionStatus').textContent='충돌 재검증 대기';tracks={white:[],yellow:[],red:[]};analyzed=false;previewMode=false;pointDraft=null;$('preview').classList.remove('activePreview');$('preview').setAttribute('aria-pressed','false');$('magnifyPanel').classList.remove('active');picking=null;zone=null;zoneEditing=false;zoneConfirmed=false;ov.classList.remove('pick','zone');$('zoneStatus').textContent='첫 화면을 불러오는 중입니다…';updateSeedInfo();status(`불러온 파일: ${f.name}\n0초 첫 화면을 준비하고 있습니다…`);$('exportStatus').textContent='분석을 마친 뒤 동영상 저장을 시도할 수 있습니다.';enable()};// iOS Safari may show a black paused <video> until the first seek/play.
+// Decode the first frame via a tiny seek WITHOUT playing, then use it as the
+// video's poster while the video stays paused at 0. The poster is visual only:
+// tracking still reads real video frames from v.
+let firstFrameReady=false,loadGeneration=0;
+function prepareFirstFrame(){
+ if(firstFrameReady||!v.videoWidth||v.readyState<2||working)return;
+ const generation=loadGeneration;
+ try{
+  const shot=document.createElement('canvas');
+  shot.width=Math.min(960,v.videoWidth);
+  shot.height=Math.max(1,Math.round(v.videoHeight*shot.width/v.videoWidth));
+  shot.getContext('2d').drawImage(v,0,0,shot.width,shot.height);
+  // Safari uses a poster reliably for never-played, paused local videos.
+  v.poster=shot.toDataURL('image/jpeg',.88);
+  firstFrameReady=true;
+  v.pause();
+  if(v.currentTime!==0){try{v.currentTime=0}catch(e){}}
+  $('seek').value='0';
+  $('clock').textContent=`00:00.00 / ${fmt(v.duration)}`;
+  updateFrameInfo();draw();
+  if(!zone)autoZone();
+  for(const ms of [220,650])setTimeout(()=>{
+   if(generation!==loadGeneration||!firstFrameReady)return;
+   if(!zoneConfirmed&&!zoneEditing&&!working&&!picking&&v.videoWidth&&v.currentTime<.2)autoZone();
+  },ms);
+  status('첫 화면(0초) 준비 완료. 재생하지 않고 당구대 영역과 공 중심을 설정할 수 있습니다.');
+ }catch(e){
+  // Keep listening for a decoded frame. Never start playback as a workaround.
+  if(v.readyState>=2)status('첫 화면을 준비 중입니다. '+e.message);
+ }
+}
+v.onloadedmetadata=()=>{
+ resize();$('dimensions').textContent=`${v.videoWidth} × ${v.videoHeight}`;
+ updateFrameInfo();enable();v.pause();
+ // A non-zero seek asks Safari to decode frame 0 without user playback.
+ if(v.readyState>=2)prepareFirstFrame();
+ else if(Number.isFinite(v.duration)&&v.duration>.01){
+  try{v.currentTime=Math.min(.001,v.duration/100)}catch(e){}
+ }
+ draw();
+};
+v.onloadeddata=prepareFirstFrame;
+v.oncanplay=prepareFirstFrame;
+v.ontimeupdate=()=>{if(!working){$('seek').value=Math.round(v.currentTime/v.duration*1000)||0;$('clock').textContent=`${fmt(v.currentTime)} / ${fmt(v.duration)}`;updateFrameInfo()}draw()};v.onplay=()=>{$('play').textContent='❚❚ 일시정지';loop()};v.onended=()=>{draw()};v.onseeked=()=>{if(!firstFrameReady)prepareFirstFrame();if(!working)draw()};v.onpause=()=>{$('play').textContent='▶ 재생';draw()};function loop(){if(v.paused)return;draw();requestAnimationFrame(loop)}$('play').onclick=async()=>{if(v.paused){if(v.ended||v.currentTime>=v.duration-.04)await seek(0);await v.play()}else v.pause()};$('seek').oninput=e=>{if(!working)v.currentTime=(+e.target.value/1000)*v.duration};async function seek(t){if(!Number.isFinite(t))return;t=Math.max(0,Math.min(v.duration-.001,t));if(Math.abs(v.currentTime-t)<.0003){draw();return}await new Promise(resolve=>{let timer;const done=()=>{clearTimeout(timer);v.removeEventListener('seeked',done);resolve()};v.addEventListener('seeked',done,{once:true});timer=setTimeout(done,3000);v.currentTime=t});draw()};const getFrameMoveCount=(normalize=false)=>{const input=$('frameMoveCount');const raw=Number(input.value);const count=Number.isFinite(raw)&&raw>=1?Math.max(1,Math.min(300,Math.round(raw))):3;if(normalize)input.value=String(count);return count};const updateFrameMoveLabels=()=>{const n=getFrameMoveCount();$('back').textContent=`◀ ${n}프레임`;$('forward').textContent=`${n}프레임 ▶`};$('frameMoveCount').addEventListener('input',updateFrameMoveLabels);$('frameMoveCount').addEventListener('change',()=>{getFrameMoveCount(true);updateFrameMoveLabels()});$('back').onclick=()=>seek(v.currentTime-getFrameMoveCount(true)/sourceFPS);$('forward').onclick=()=>seek(v.currentTime+getFrameMoveCount(true)/sourceFPS);updateFrameMoveLabels();$('speed').onchange=()=>v.playbackRate=Number($('speed').value);$('sourcefps').onchange=()=>{sourceFPS=Math.max(1,Math.min(240,Number($('sourcefps').value)||30));updateFrameInfo()};function updateFrameInfo(){if(!v.videoWidth)return;const total=Math.round(v.duration*sourceFPS),current=Math.min(total,Math.floor(v.currentTime*sourceFPS)+1);$('frameinfo').textContent=`FPS ${sourceFPS.toFixed(3)} (사용자 설정) · 현재 ${current}프레임`; $('framecount').textContent=`추정 총 ${total}프레임`};for(let k of keys)$(k).onclick=async()=>{v.pause();if(v.currentTime>.07)await seek(0);zoneEditing=false;ov.classList.remove('zone');picking=k;pointDraft=null;$('magnifyPanel').classList.remove('active');ov.classList.add('pick');status(`${names[k]} 공의 중심을 영상에서 터치하세요.`);draw()};const mg=$('magnifyCanvas'),mc=mg.getContext('2d');const zoom=5;function drawMagnifier(){if(!pointDraft)return;const p=pointDraft,span=mg.width/zoom;mc.fillStyle='#07120f';mc.fillRect(0,0,mg.width,mg.height);try{const left=Math.max(0,Math.min(v.videoWidth-span,p.anchorX-span/2)),top=Math.max(0,Math.min(v.videoHeight-span,p.anchorY-span/2));p.left=left;p.top=top;mc.drawImage(v,left,top,Math.min(span,v.videoWidth-left),Math.min(span,v.videoHeight-top),0,0,Math.min(span,v.videoWidth-left)*zoom,Math.min(span,v.videoHeight-top)*zoom)}catch(e){}const x=(p.x-p.left)*zoom,y=(p.y-p.top)*zoom;mc.strokeStyle='#00ffb5';mc.lineWidth=1.5;mc.beginPath();mc.moveTo(x-18,y);mc.lineTo(x+18,y);mc.moveTo(x,y-18);mc.lineTo(x,y+18);mc.stroke();mc.beginPath();mc.arc(x,y,7,0,Math.PI*2);mc.stroke();}ov.addEventListener('pointerdown',e=>{if(!picking)return;e.preventDefault();const r=ov.getBoundingClientRect(),x=(e.clientX-r.left)/r.width*ov.width,y=(e.clientY-r.top)/r.height*ov.height;pointDraft={x,y,anchorX:x,anchorY:y};$('magnifyPanel').classList.add('active');$('magnifyHint').textContent=`${names[picking]} 공: 확대된 화면에서 중심을 다시 터치해 미세 조정하세요.`;drawMagnifier();});mg.addEventListener('pointerdown',e=>{if(!pointDraft)return;e.preventDefault();const r=mg.getBoundingClientRect();pointDraft.x=Math.max(0,Math.min(ov.width,pointDraft.left+(e.clientX-r.left)/r.width*mg.width/zoom));pointDraft.y=Math.max(0,Math.min(ov.height,pointDraft.top+(e.clientY-r.top)/r.height*mg.height/zoom));drawMagnifier()});$('confirmPoint').onclick=()=>{if(!pointDraft||!picking)return;let selection={x:pointDraft.x,y:pointDraft.y,t:v.currentTime,ok:true,confidence:1};if(v.videoWidth&&v.readyState>=2){const ww=Math.min(960,v.videoWidth);scan.width=ww;scan.height=Math.max(1,Math.round(v.videoHeight*ww/v.videoWidth));try{sc.drawImage(v,0,0,scan.width,scan.height);const image=sc.getImageData(0,0,scan.width,scan.height);selection=robustInitialSeed(image,picking,selection,v.videoWidth/scan.width,v.videoHeight/scan.height)}catch(e){}}seeds[picking]=selection;$('reviewBall').value=picking;updateSeedInfo();picking=null;pointDraft=null;$('magnifyPanel').classList.remove('active');ov.classList.remove('pick');status('확대 지정 완료. 3개를 모두 지정한 뒤 분석하세요.');enable();draw()};$('cancelPoint').onclick=()=>{pointDraft=null;$('magnifyPanel').classList.remove('active');};
+$('recheckSeeds').onclick=async()=>{
+ if(!v.videoWidth||working)return;
+ v.pause();await seek(0);sc.drawImage(v,0,0,scan.width,scan.height);
+ const img=sc.getImageData(0,0,scan.width,scan.height),sx=v.videoWidth/scan.width,sy=v.videoHeight/scan.height;
+ for(const k of keys)if(seeds[k])seeds[k]=robustInitialSeed(img,k,seeds[k],sx,sy);
+ updateSeedInfo();draw();status('0초의 공 외곽을 다시 평가했습니다. 파란 중심선과 주황색 최초 터치점을 비교해 확인하세요.');
+};// The polygon is a user-adjustable movement envelope, not a perspective transform.
+function wholeZone(){zoneConfirmed=false;zone=[{x:0,y:0},{x:ov.width,y:0},{x:ov.width,y:ov.height},{x:0,y:ov.height}];draw()}
+function inside(x,y){if(!zone)return true;let yes=false;for(let i=0,j=zone.length-1;i<zone.length;j=i++){const a=zone[i],b=zone[j];if(((a.y>y)!==(b.y>y))&&(x<(b.x-a.x)*(y-a.y)/(b.y-a.y)+a.x))yes=!yes}return yes}
+// The user's manually adjusted four-corner envelope is a SEARCH BOUNDARY,
+// not a physical cushion. Reject other tables but allow a generous margin
+// outside the approximate drawn line for camera perspective / drag error.
+function distanceToZone(x,y){
+ if(!zone||zone.length<3)return 0;
+ if(inside(x,y))return 0;
+ let best=Infinity;
+ for(let i=0;i<zone.length;i++){
+  const a=zone[i],b=zone[(i+1)%zone.length];
+  const dx=b.x-a.x,dy=b.y-a.y,den=dx*dx+dy*dy||1;
+  const t=Math.max(0,Math.min(1,((x-a.x)*dx+(y-a.y)*dy)/den));
+  best=Math.min(best,Math.hypot(x-a.x-t*dx,y-a.y-t*dy));
+ }
+ return best;
+}
+function zoneMargin(k){
+ // video pixels; intentionally NOT the presumed ball-to-cushion offset.
+ return Math.max(16,Math.min(34,(seeds[k]?.radius||7)*1.9));
+}
+function admissible(x,y,k){return !zoneConfirmed||distanceToZone(x,y)<=zoneMargin(k)}
+// V0.17: find the largest CONNECTED, chromatically consistent felt patch.
+// Brightness is intentionally ignored for hue matching: uneven overhead lighting
+// changes value far more than hue. The table is a quadrilateral, not an RGB bbox.
+// This color envelope is ONLY a search region and never a cushion/reflector.
+function zoneHSV(r,g,b){
+ const mx=Math.max(r,g,b),mn=Math.min(r,g,b),c=mx-mn;
+ let hue=0;
+ if(c){if(mx===r)hue=60*((g-b)/c%6);else if(mx===g)hue=60*((b-r)/c+2);else hue=60*((r-g)/c+4)}
+ if(hue<0)hue+=360;
+ return [hue,c/(mx||1),mx/255];
+}
+function zoneMedian(values){if(!values.length)return 0;values.sort((a,b)=>a-b);return values[Math.floor(values.length/2)]}
+function zoneInfer(data,w,h){
+ const N=w*h,hh=new Float32Array(N),sat=new Float32Array(N),val=new Float32Array(N),hist=new Uint32Array(36);
+ for(let i=0;i<N;i++){
+  const z=i*4,hs=zoneHSV(data[z],data[z+1],data[z+2]);hh[i]=hs[0];sat[i]=hs[1];val[i]=hs[2];
+  if(hs[1]>.24&&hs[2]>.22)hist[Math.floor(hs[0]/10)%36]++;
+ }
+ const peaks=[];
+ for(let b=0;b<36;b++){
+  const weight=hist[(b+35)%36]+hist[b]+hist[(b+1)%36];
+  peaks.push({h:(b+.5)*10,n:weight});
+ }
+ peaks.sort((a,b)=>b.n-a.n);
+ const candidates=[];
+ for(const p of peaks){
+  if(candidates.some(v=>Math.min(Math.abs(v.h-p.h),360-Math.abs(v.h-p.h))<28))continue;
+  candidates.push(p);if(candidates.length>=5)break;
+ }
+ let winner=null;
+ for(const peak of candidates){
+  if(peak.n<N*.025)continue;
+  const mask=new Uint8Array(N);
+  for(let i=0;i<N;i++){
+   const dh=Math.abs(hh[i]-peak.h),delta=Math.min(dh,360-dh);
+   if(delta<22&&sat[i]>.20&&val[i]>.20)mask[i]=1;
+  }
+  // Close 1-pixel holes from compression artifacts and ball markings, keeping
+  // background-colored gaps between separate tables unconnected.
+  const visited=new Uint8Array(N),queue=new Int32Array(N);
+  for(let i=0;i<N;i++){
+   if(!mask[i]||visited[i])continue;
+   let head=0,tail=1;queue[0]=i;visited[i]=1;
+   let minx=w,maxx=0,miny=h,maxy=0;
+   const left=new Int16Array(h),right=new Int16Array(h),counts=new Int16Array(h);
+   left.fill(w);right.fill(-1);
+   while(head<tail){
+    const z=queue[head++],x=z%w,y=(z/w)|0;
+    if(x<minx)minx=x;if(x>maxx)maxx=x;if(y<miny)miny=y;if(y>maxy)maxy=y;
+    if(x<left[y])left[y]=x;if(x>right[y])right[y]=x;counts[y]++;
+    for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){
+     if(!dx&&!dy)continue;const xx=x+dx,yy=y+dy;
+     if(xx<0||yy<0||xx>=w||yy>=h)continue;
+     const k=yy*w+xx;if(mask[k]&&!visited[k]){visited[k]=1;queue[tail++]=k}
+    }
+   }
+   const boxW=maxx-minx+1,boxH=maxy-miny+1,area=tail;
+   if(area<N*.055||boxW<w*.17||boxH<h*.18)continue;
+   const fullness=area/(boxW*boxH),ratio=boxW/Math.max(1,boxH);
+   // Broad and contiguous, not a narrow colored sign, shirt, score overlay, etc.
+   if(fullness<.35||ratio<.27||ratio>5.7)continue;
+   const eligible=[];
+   for(let y=miny;y<=maxy;y++){
+    const span=right[y]-left[y]+1;
+    if(span>=boxW*.18&&counts[y]>=span*.36)eligible.push(y);
+   }
+   if(eligible.length<boxH*.42)continue;
+   const yTop=eligible[0],yBottom=eligible[eligible.length-1];
+   if(yBottom-yTop<h*.17)continue;
+   function borderAt(side,yTarget){
+    const rows=eligible.filter(y=>Math.abs(y-yTarget)<(yBottom-yTop)*.18+2);
+    if(!rows.length)return side==='left'?minx:maxx;
+    const xs=rows.map(y=>side==='left'?left[y]:right[y]);
+    const med=zoneMedian(xs.slice());
+    // Fit boundary using the nearby rows: correct perspective taper while
+    // ignoring occlusion outliers (e.g., a player's arm across one corner).
+    let sx=0,sy=0,sxx=0,sxy=0,n=0;
+    for(const y of rows){const x=side==='left'?left[y]:right[y];if(Math.abs(x-med)>boxW*.16)continue;
+      sx+=y;sy+=x;sxx+=y*y;sxy+=x*y;n++}
+    if(n<3)return med;
+    const slope=(n*sxy-sx*sy)/(n*sxx-sx*sx||1);
+    return Math.max(minx-3,Math.min(maxx+3,sy/n+slope*(yTarget-sx/n)));
+   }
+   const quad=[{x:borderAt('left',yTop),y:yTop},{x:borderAt('right',yTop),y:yTop},
+      {x:borderAt('right',yBottom),y:yBottom},{x:borderAt('left',yBottom),y:yBottom}];
+   const topWidth=quad[1].x-quad[0].x,botWidth=quad[2].x-quad[3].x;
+   const quadArea=(topWidth+botWidth)*.5*(yBottom-yTop);
+   if(Math.min(topWidth,botWidth)<w*.1||quadArea<N*.08)continue;
+   const score=area*(.8+.2*fullness)*Math.max(.75,Math.min(1.15,quadArea/area));
+   if(!winner||score>winner.score)winner={quad,score,area,coverage:area/N,hue:peak.h,fullness};
+  }
+ }
+ return winner;
+}
+function autoZone(){
+ if(!v.videoWidth)return;
+ try{
+  const w=360,h=Math.max(1,Math.round(w*v.videoHeight/v.videoWidth));
+  scan.width=w;scan.height=h;sc.drawImage(v,0,0,w,h);
+  const result=zoneInfer(sc.getImageData(0,0,w,h).data,w,h);
+  if(!result){wholeZone();$('zoneStatus').textContent='색상 영역을 신뢰할 수 없어 전체 화면으로 설정했습니다. 꼭짓점을 직접 지정해 주세요.';return}
+  const sx=ov.width/w,sy=ov.height/h;
+  // Tiny expansion absorbs imperfect felt segmentation and corner estimation;
+  // the tracking margin is applied separately in admissible().
+  const cx=result.quad.reduce((a,p)=>a+p.x,0)/4,cy=result.quad.reduce((a,p)=>a+p.y,0)/4;
+  zone=result.quad.map(p=>({x:Math.max(0,Math.min(ov.width,(p.x+(p.x-cx)*.035)*sx)),
+                          y:Math.max(0,Math.min(ov.height,(p.y+(p.y-cy)*.035)*sy))}));
+  zoneConfirmed=true;zoneEditing=false;ov.classList.remove('zone');$('editZone').textContent='✥ 꼭짓점 드래그';
+  $('zoneStatus').textContent=`✓ 가장 큰 연결 색상 영역 자동 적용 (영상의 약 ${Math.round(result.coverage*100)}%). 꼭짓점을 드래그해 미세 조정할 수 있습니다. 이 선은 정확한 쿠션 경계가 아닙니다.`;
+  draw();
+ }catch(e){wholeZone();$('zoneStatus').textContent='자동 추정 오류: 전체 화면을 사용합니다. '+e.message}
+}
+$('autoZone').onclick=()=>{v.pause();autoZone()};$('editZone').onclick=()=>{if(!zone)wholeZone();v.pause();picking=null;ov.classList.remove('pick');zoneEditing=!zoneEditing;ov.classList.toggle('zone',zoneEditing);$('editZone').textContent=zoneEditing?'✓ 영역 편집 완료':'✥ 꼭짓점 드래그';if(!zoneEditing){zoneConfirmed=true;$('zoneStatus').textContent='✓ 편집 영역 적용 중 — 영역 밖 다른 당구대 후보는 제외하고, 경계의 오차는 여유 있게 허용합니다.';}draw()};$('resetZone').onclick=()=>{wholeZone();$('zoneStatus').textContent='전체 영상으로 초기화했습니다. 다른 당구대를 제외하려면 꼭짓점을 다시 지정하세요.'};
+function pointerXY(e){let r=ov.getBoundingClientRect();return {x:(e.clientX-r.left)/r.width*ov.width,y:(e.clientY-r.top)/r.height*ov.height}}
+ov.addEventListener('pointerdown',e=>{if(!zoneEditing||!zone)return;const p=pointerXY(e);let distances=zone.map(q=>Math.hypot(q.x-p.x,q.y-p.y)),index=distances.indexOf(Math.min(...distances));if(distances[index]>Math.max(35,ov.width*.09))return;dragCorner=index;ov.setPointerCapture(e.pointerId);e.preventDefault()});ov.addEventListener('pointermove',e=>{if(!zoneEditing||dragCorner<0)return;const p=pointerXY(e);zone[dragCorner]={x:Math.max(0,Math.min(ov.width,p.x)),y:Math.max(0,Math.min(ov.height,p.y))};draw();e.preventDefault()});for(let ev of ['pointerup','pointercancel'])ov.addEventListener(ev,()=>dragCorner=-1);
+for(let id of ['alpha','thick'])$(id).oninput=()=>{$('alphaText').textContent=$('alpha').value+'%';$('widthText').textContent=$('thick').value+'px';draw()};for(let id of ['full','stabilize','gaps','traceStyle'])$(id).onchange=draw;
+$('advancedCenter').onchange=refreshAdvancedDisplay;$('shadowGeometry').onchange=()=>{if(analyzed)optimizeGeometry();draw()};
+$('shadowSeed').onchange=async()=>{if(!v.videoWidth||working)return;const previous=analyzed;await $('recheckSeeds').onclick();if(previous)status('초기 중심 판정 방식이 변경됐습니다. 새 중심으로 궤적을 비교하려면 전체 영상 분석을 다시 실행하세요.');};
+for(const id of ['seedModeWhite','seedModeYellow','seedModeRed'])$(id).onchange=async()=>{if(!v.videoWidth||working)return;await $('recheckSeeds').onclick();if(analyzed)status('초기 중심 모드가 바뀌었습니다. 변경된 초기값으로 비교하려면 전체 분석을 다시 실행하세요.');};
+$('yellowCentroid').onchange=()=>{if(analyzed)status('노란 공 중심 검증 설정을 바꿨습니다. 전체 분석을 다시 실행하면 적용됩니다.');};$('advancedScope').onchange=()=>{if(analyzed)$('advancedStatus').textContent='분석 대상이 변경됐습니다. 새 공에 적용하려면 전체 영상 분석을 다시 실행하세요.';};
+$('smoothLevel').onchange=()=>{const names=['기본','약한 보정','방송형 곡선','강한 보정'];$('smoothLevelText').textContent=`레벨 ${$('smoothLevel').value} · ${names[+$('smoothLevel').value]}`;draw()};$('fps').onchange=()=>frameStep=1/Math.min(+$('fps').value,sourceFPS);$('collisionReview').onchange=()=>{smoothLayerCache.clear();draw()};$('projectiveMotion').onchange=()=>{smoothLayerCache.clear();draw()};
+// V0.12 — manual tap is a hint. Estimate a compact ball in the paused first frame,
+// learn its observed appearance, and reject cue-like elongated components.
+const clamp=(x,lo,hi)=>Math.max(lo,Math.min(hi,x));
+function ballColor(r,g,b){const s=r+g+b+1;return [r/s,g/s,b/s,Math.max(r,g,b)/255]}
+function sampleRGB(img,x,y){const xx=clamp(Math.round(x),0,img.width-1),yy=clamp(Math.round(y),0,img.height-1),i=(yy*img.width+xx)*4,d=img.data;return [d[i],d[i+1],d[i+2]]}
+function median(nums){if(!nums.length)return 0;const a=nums.slice().sort((a,b)=>a-b);return a[Math.floor(a.length/2)]}
+function rgbDistance(a,b){return Math.hypot(a[0]-b[0],a[1]-b[1],a[2]-b[2])/441.673}
+function circleSample(img,x,y,r){
+ const core=[];for(const [dx,dy] of [[0,0],[.35,0],[-.35,0],[0,.35],[0,-.35],[.4,.25],[-.4,-.25]])core.push(sampleRGB(img,x+dx*r,y+dy*r));
+ const ref=[median(core.map(v=>v[0])),median(core.map(v=>v[1])),median(core.map(v=>v[2]))];
+ let inside=0,contrast=0,good=0,variation=0;
+ for(let i=0;i<12;i++){const a=2*Math.PI*i/12,cs=Math.cos(a),sn=Math.sin(a);
+  const inner=sampleRGB(img,x+cs*r*.66,y+sn*r*.66),outer=sampleRGB(img,x+cs*r*1.35,y+sn*r*1.35);
+  const id=rgbDistance(inner,ref),od=rgbDistance(outer,ref);
+  if(id<.24)inside++;if(od>id+.045)good++;
+  contrast+=Math.max(-.4,Math.min(.9,od-id));variation+=id;
+ }
+ return {score:contrast/12*.95+good/12*.19+inside/12*.07-variation/12*.15,uniform:inside/12,edge:good/12,ref};
+}
+function refineSeed(img,p,sx,sy){
+ const cx=p.x/sx,cy=p.y/sy,W=img.width,H=img.height;
+ const shift=Math.max(2,Math.min(5,Math.round(W/180))),maxR=Math.max(4,Math.min(12,Math.round(W/48)));
+ let best=null;
+ for(let dy=-shift;dy<=shift;dy++)for(let dx=-shift;dx<=shift;dx++){
+  const x=cx+dx,y=cy+dy;if(x<maxR+2||y<maxR+2||x>=W-maxR-2||y>=H-maxR-2)continue;
+  for(let r=1.75;r<=maxR;r+=.75){const s=circleSample(img,x,y,r);
+   if(s.uniform<.54||s.edge<.50)continue;
+   const score=s.score-Math.hypot(dx,dy)*.010-Math.max(0,2.5-r)*.014;
+   if(!best||score>best.score)best={x,y,r,score};
+  }
+ }
+ // Badly lit or occluded? Do not forcibly move a user-selected point.
+ if(!best||best.score<.14)return {...p,radius:Math.max(2.5,W/180)*sx,refined:false};
+ // Reject an implausible displacement or a huge size discontinuity in the first frame.
+ return {...p,x:best.x*sx,y:best.y*sy,radius:best.r*(sx+sy)/2,refined:true,seedQuality:best.score};
+}
+
+const seedLabels={white:'흰 공',yellow:'노란 공',red:'빨간 공'};
+let collisionStats={events:0,candidates:0,corrected:0,recovered:0};
+function robustInitialSeed(img,k,p,sx,sy){
+ const original={...p,x:Number.isFinite(p.rawX)?p.rawX:p.x,y:Number.isFinite(p.rawY)?p.rawY:p.y};
+ const old=ArchibaldV106.refineSeed(img,original,k,sx,sy);
+ let base=old;
+ if(!old.refined){
+  const legacy=k==='red'?refineRedSeed(img,original,sx,sy):refineSeed(img,original,sx,sy);
+  if(legacy.refined&&Math.hypot(legacy.x-original.x,legacy.y-original.y)<Math.max(5,10*sx))
+   base={...legacy,rawX:original.x,rawY:original.y,seedQuality:Math.min(.47,legacy.seedQuality||.40),seedMethod:'legacy-fallback'};
+  else base={...old,x:original.x,y:original.y,rawX:original.x,rawY:original.y,seedMethod:'manual-low-confidence',seedQuality:0};
+ }
+ const shadow=$('shadowSeed').checked?ArchibaldShadow.refineSeed(img,original,k,sx,sy,base):null;
+ const baseRadius=(Number.isFinite(base.radius)&&base.radius>1?base.radius:Math.max(4,img.width/150*sx));
+ // Manual center selection does not disable diameter measurement. When the
+ // independent silhouette has adequate support use its plausible radius only.
+ const radius=(shadow&&shadow.seedQuality>=.70&&shadow.shadowEvidence?.coverage>=.48&&
+   Number.isFinite(shadow.radius)&&shadow.radius/baseRadius>=.75&&shadow.radius/baseRadius<=1.30)
+   ?shadow.radius:baseRadius;
+ // A perimeter score alone does NOT measure accuracy of the center. Require
+ // small movement relative to the ball and independent sector evidence.
+ const maxShift=Math.max(1.45*sx,Math.min(4*sx,radius*.28));
+ const shadowSafe=Boolean(shadow&&shadow.seedQuality>=.72&&shadow.shadowEvidence?.inliers>=18&&
+   shadow.shadowEvidence?.coverage>=.56&&Math.hypot(shadow.x-original.x,shadow.y-original.y)<=maxShift);
+ const baseSafe=Boolean(base.refined&&base.seedQuality>=.78&&
+   Math.hypot(base.x-original.x,base.y-original.y)<=maxShift);
+ const requested=$('seedMode'+k[0].toUpperCase()+k.slice(1)).value;
+ const auto= requested==='auto';
+ const chosen=auto?(shadowSafe?shadow:baseSafe?base:null):null;
+ // Preserve independent radius measurement even when trusting the manual
+ // center, so color learning isn't tied to the clicked RGB pixel.
+ const result={...original,...(chosen||{}),x:chosen?chosen.x:original.x,y:chosen?chosen.y:original.y,
+   radius:Math.min(28,Math.max(3,chosen?.radius||radius)),rawX:original.x,rawY:original.y,
+   refined:!!chosen,seedQuality:chosen?.seedQuality??Math.max(base.seedQuality||0,shadow?.seedQuality||0),
+   seedMethod:chosen?.seedMethod||'manual-center-protected',centerMode:requested,
+   originalV106:{x:base.x,y:base.y,radius:base.radius,quality:base.seedQuality,refined:base.refined},
+   v108Candidate:shadow||null,trackingRadius:base.refined&&base.seedQuality>=.70?base.radius:radius,
+   shadowAccepted:!!(chosen&&chosen===shadow)};
+ return result;
+}
+function drawSeedReview(){
+ const canvas=$('seedReview');if(!canvas)return;
+ const c=canvas.getContext('2d'),w=canvas.width,h=canvas.height;
+ c.fillStyle='#102821';c.fillRect(0,0,w,h);
+ const key=$('reviewBall').value,p=seeds[key],desc=[];
+ for(const k of keys){const s=seeds[k];if(s)desc.push(seedLabels[k]+' '+(s.refined?'자동 중심':'최초 터치 중심')+' · '+Math.round((s.radius||7)*2)+'px')}
+ $('seedReviewStatus').textContent=desc.length?desc.join(' / '):'세 공의 초기 중심을 지정하면 확대해 표시합니다.';
+ c.fillStyle='#e7f6ee';c.font='bold 23px sans-serif';c.fillText(seedLabels[key],218,38);
+ if(!p||!v.videoWidth){c.fillStyle='#8faea2';c.font='17px sans-serif';c.fillText('먼저 중심을 지정하세요',220,105);return}
+ const r=Math.max(4,p.radius||8),cropR=Math.max(17,r*2.8),x0=Math.max(0,p.x-cropR),y0=Math.max(0,p.y-cropR);
+ const dw=194,dh=194,viewW=Math.min(v.videoWidth-x0,2*cropR),viewH=Math.min(v.videoHeight-y0,2*cropR);
+ try{c.drawImage(v,x0,y0,viewW,viewH,8,13,dw,dh)}catch(e){}
+ const mapx=x=>8+(x-x0)*dw/viewW,mapy=y=>13+(y-y0)*dh/viewH;
+ const xc=mapx(p.x),yc=mapy(p.y),radx=r*dw/viewW,rady=r*dh/viewH;
+ c.strokeStyle='#33d7f5';c.lineWidth=2.3;c.beginPath();c.ellipse(xc,yc,radx,rady,0,0,Math.PI*2);c.stroke();
+ c.beginPath();c.moveTo(xc-12,yc);c.lineTo(xc+12,yc);c.moveTo(xc,yc-12);c.lineTo(xc,yc+12);c.stroke();
+ const rawX=Number.isFinite(p.rawX)?p.rawX:p.x,rawY=Number.isFinite(p.rawY)?p.rawY:p.y;
+ const px=mapx(rawX),py=mapy(rawY);c.strokeStyle='#ffb667';c.beginPath();c.moveTo(px-7,py);c.lineTo(px+7,py);c.moveTo(px,py-7);c.lineTo(px,py+7);c.stroke();
+ c.fillStyle='#e5f5ed';c.font='20px sans-serif';c.fillText('지름  '+Math.round(r*2)+'px',217,75);
+ c.font='18px sans-serif';c.fillText('중심  '+Math.round(p.x)+', '+Math.round(p.y),217,108);
+ const q=Math.round(100*(p.seedQuality||0));c.fillStyle=q>=60?'#95f2c1':'#ffcf9d';
+ c.fillText(q?'외곽 적합도  '+q+'%':'외곽 불확실',217,139);
+ c.font='16px sans-serif';c.fillStyle='#bedacf';c.fillText(p.refined?'청록색 + : 자동 보정 중심':'청록색 + : 최초 터치 유지',217,169);
+ c.fillStyle='#ffcb90';c.fillText('주황색 + : 최초 터치',217,197);
+}
+$('reviewBall').onchange=drawSeedReview;
+function projectiveModel(){return zoneConfirmed&&$('projectiveMotion')?.checked?ArchibaldV106.homography(zone):null}
+function updateSeedInfo(){
+ const stateIDs={white:'wState',yellow:'yState',red:'rState'},coordIDs={white:'wCoord',yellow:'yCoord',red:'rCoord'};
+ for(const k of keys){
+  const p=seeds[k];
+  if(!p){$(stateIDs[k]).textContent='중심 미지정 · 지름 —';$(coordIDs[k]).textContent='좌표 —';continue;}
+  const diameter=Number.isFinite(p.radius)&&p.radius>0?`약 ${Math.round(p.radius*2)}px`:'미측정';
+  $(stateIDs[k]).textContent=`${p.refined?'외곽 중심 보정':'최초 터치 유지'} · 지름 ${diameter} · 외곽 적합도 ${Math.round((p.seedQuality||0)*100)}%`;
+  $(coordIDs[k]).textContent=`중심 좌표 (${Math.round(p.x)}, ${Math.round(p.y)})`;
+ }
+
+ drawSeedReview();
+ $('recheckSeeds').disabled=!Object.keys(seeds).length;
+}
+// V0.13: Red balls have bright, nearly white specular highlights and a dark
+// underside. Never choose the highlight as the ball's entire seed / diameter.
+// Use a red-dominant *region near the user's tap* and learn its full extent.
+function redBodyWeight(r,g,b){
+ const prominence=r-Math.max(g*1.1,b*.98)-3;
+ return clamp(prominence/58,0,1)*clamp((r-54)/82,0,1);
+}
+function refineRedSeed(img,p,sx,sy){
+ const W=img.width,H=img.height,d=img.data,cx=p.x/sx,cy=p.y/sy;
+ const reach=clamp(Math.round(W*.027),14,31);
+ const x0=Math.max(1,Math.floor(cx-reach)),x1=Math.min(W-2,Math.ceil(cx+reach));
+ const y0=Math.max(1,Math.floor(cy-reach)),y1=Math.min(H-2,Math.ceil(cy+reach));
+ const mw=x1-x0+1,mh=y1-y0+1,mask=new Uint8Array(mw*mh);
+ for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++){
+  const i=(y*W+x)*4;if(redBodyWeight(d[i],d[i+1],d[i+2])>.19)mask[(y-y0)*mw+x-x0]=1;
+ }
+ let best=null;const seen=new Uint8Array(mask.length),q=[];
+ for(let i=0;i<mask.length;i++){
+  if(!mask[i]||seen[i])continue;
+  q.length=0;q.push(i);seen[i]=1;
+  let area=0,sumx=0,sumy=0,minx=mw,miny=mh,maxx=0,maxy=0,weight=0;
+  for(let h=0;h<q.length&&q.length<2500;h++){
+   const z=q[h],x=z%mw,y=(z/mw)|0;area++;minx=Math.min(minx,x);maxx=Math.max(maxx,x);miny=Math.min(miny,y);maxy=Math.max(maxy,y);
+   const j=((y0+y)*W+x0+x)*4,w=redBodyWeight(d[j],d[j+1],d[j+2]);sumx+=(x0+x)*(.5+w);sumy+=(y0+y)*(.5+w);weight+=.5+w;
+   for(let oy=-1;oy<=1;oy++)for(let ox=-1;ox<=1;ox++){
+    if(!ox&&!oy)continue;const xx=x+ox,yy=y+oy;if(xx<0||xx>=mw||yy<0||yy>=mh)continue;
+    const nz=yy*mw+xx;if(mask[nz]&&!seen[nz]){seen[nz]=1;q.push(nz)}
+   }
+  }
+  if(area<10||weight<=0)continue;
+  const bw=maxx-minx+1,bh=maxy-miny+1,diam=Math.max(bw,bh),minor=Math.min(bw,bh);
+  if(diam>Math.max(30,W*.035)||diam/Math.max(1,minor)>2.6)continue;
+  const centerX=sumx/weight,centerY=sumy/weight,dist=Math.hypot(centerX-cx,centerY-cy);
+  const score=area/Math.max(1,bw*bh)*5+Math.min(area,130)*.025-dist*.16-Math.max(0,diam-24)*.35;
+  if(!best||score>best.score)best={x:centerX,y:centerY,r:clamp(diam*.53,3.4,15),score,area};
+ }
+ if(!best||Math.hypot(best.x-cx,best.y-cy)>reach*.8){
+  // The tap still anchors the track if the colour evidence is ambiguous.
+  return {...p,radius:Math.max(5,Math.min(12,(p.radius||8)/((sx+sy)/2)))*(sx+sy)/2,refined:false};
+ }
+ return {...p,x:best.x*sx,y:best.y*sy,radius:best.r*(sx+sy)/2,refined:true,seedQuality:best.score,seedMethod:'red-body'};
+}
+function learnTemplate(img,k,p,sx,sy){
+ const W=img.width,H=img.height,d=img.data,cx=p.x/sx,cy=p.y/sy,rad=clamp((p.radius||5)/((sx+sy)/2),1.8,14);
+ const a=[],raw=[];
+ for(let y=Math.max(0,Math.floor(cy-rad*.78));y<=Math.min(H-1,Math.ceil(cy+rad*.78));y++)for(let x=Math.max(0,Math.floor(cx-rad*.78));x<=Math.min(W-1,Math.ceil(cx+rad*.78));x++){
+  if((x-cx)**2+(y-cy)**2>(rad*.78)**2)continue;
+  const i=(y*W+x)*4,r=d[i],g=d[i+1],b=d[i+2];if(Math.max(r,g,b)<40)continue;
+  if(k==='red'&&redBodyWeight(r,g,b)<.23)continue; // reject white specular highlights and shadows
+  if(k!=='red'&&r>g*1.4&&r>b*1.45)continue; // spotted red markings, not ball body
+  const rgb=[r,g,b];raw.push(rgb);a.push(ballColor(r,g,b));
+ }
+ if(a.length<2){const rgb=sampleRGB(img,cx,cy);raw.push(rgb);a.push(ballColor(...rgb))}
+ const c=[median(a.map(v=>v[0])),median(a.map(v=>v[1])),median(a.map(v=>v[2]))],lum=median(a.map(v=>v[3]));
+ const variability=a.map(v=>Math.hypot(c[0]-v[0],c[1]-v[1],c[2]-v[2]));
+ const ring=[];for(let i=0;i<16;i++){const ang=i*Math.PI/8;ring.push(sampleRGB(img,cx+rad*1.8*Math.cos(ang),cy+rad*1.8*Math.sin(ang)))}
+ const rgb=[median(raw.map(v=>v[0])),median(raw.map(v=>v[1])),median(raw.map(v=>v[2]))];
+ const bg=[median(ring.map(v=>v[0])),median(ring.map(v=>v[1])),median(ring.map(v=>v[2]))];
+ const baseTol=clamp((median(variability)*2.6)+.068,.077,.17);
+ return {c,lum,rgb,bg,tol:baseTol,radius:rad,initialDiameter:rad*2,contrast:rgbDistance(rgb,bg)};
+}
+function detect(img,k,prev,prevprev,sx,sy,lostCount,otherPositions,dt=1/30){
+ const W=img.width,H=img.height,d=img.data,T=templates[k];if(!T)return null;
+ const ox=prev.x/sx,oy=prev.y/sy;
+ const vx=prevprev?clamp((prev.x-prevprev.x)/sx,-W*.22,W*.22):0;
+ const vy=prevprev?clamp((prev.y-prevprev.y)/sy,-H*.32,H*.32):0;
+ const speed=Math.hypot(vx,vy),r=T.radius;
+ const searchRadius=Math.min(Math.max(W,H)*.43,Math.max(20,W*.046,5*r)+speed*2.1+Math.min(lostCount,7)*Math.max(7,r*2.6));
+ const x0=Math.max(1,Math.floor(ox-searchRadius)),x1=Math.min(W-2,Math.ceil(ox+searchRadius));
+ const y0=Math.max(1,Math.floor(oy-searchRadius)),y1=Math.min(H-2,Math.ceil(oy+searchRadius));
+ if(x1<x0||y1<y0)return null;
+ const mw=x1-x0+1,mh=y1-y0+1,mask=new Uint8Array(mw*mh);
+ for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++){
+  const i=(y*W+x)*4,c=ballColor(d[i],d[i+1],d[i+2]);
+  const difference=Math.hypot(c[0]-T.c[0],c[1]-T.c[1],c[2]-T.c[2]);
+  if(difference<T.tol&&c[3]>Math.max(.12,T.lum*.32))mask[(y-y0)*mw+x-x0]=1;
+ }
+ const seen=new Uint8Array(mask.length),stack=[];let best=null,bestScore=-Infinity;
+ const baseArea=Math.PI*r*r;
+ const blurFactor=clamp(speed/Math.max(2,2*r),0,1.6);
+ const maxLength=2*r*(2.3+blurFactor*1.25); // ball motion blur yes; cue-length streak no
+ const maxRatio=2.45+blurFactor*.9;          // major/minor axis limit, not strict roundness
+ for(let j=0;j<mask.length;j++){
+  if(!mask[j]||seen[j])continue;
+  stack.length=0;stack.push(j);seen[j]=1;
+  let count=0,sumx=0,sumy=0,sumxx=0,sumyy=0,sumxy=0,minx=mw,maxx=0,miny=mh,maxy=0,appearance=0,overflow=false;
+  while(stack.length){const z=stack.pop(),xx=z%mw,yy=(z/mw)|0;count++;sumx+=xx;sumy+=yy;sumxx+=xx*xx;sumyy+=yy*yy;sumxy+=xx*yy;
+   minx=Math.min(minx,xx);maxx=Math.max(maxx,xx);miny=Math.min(miny,yy);maxy=Math.max(maxy,yy);
+   const i=((y0+yy)*W+x0+xx)*4,c=ballColor(d[i],d[i+1],d[i+2]);appearance+=Math.hypot(c[0]-T.c[0],c[1]-T.c[1],c[2]-T.c[2]);
+   for(const q of [z-1,z+1,z-mw,z+mw]){if(q<0||q>=mask.length||seen[q]||!mask[q])continue;if(Math.abs(q%mw-xx)>1)continue;seen[q]=1;stack.push(q)}
+   // Too large to be a single ball; continue marking the component so it cannot fragment into a false ball.
+   if(count>Math.max(1400,baseArea*12)){overflow=true;break}
+  }
+  if(overflow){while(stack.length){const z=stack.pop(),xx=z%mw;for(const q of [z-1,z+1,z-mw,z+mw]){if(q<0||q>=mask.length||seen[q]||!mask[q])continue;if(Math.abs(q%mw-xx)>1)continue;seen[q]=1;stack.push(q)}}continue}
+  if(count<Math.max(2,baseArea*.13)||count>Math.max(24,baseArea*(3.9+blurFactor)))continue;
+  const bw=maxx-minx+1,bh=maxy-miny+1,density=count/(bw*bh);
+  // For diagonal cues the bbox can look square. Eigenvalue ratio catches thin oblique rods.
+  const ux=sumx/count,uy=sumy/count,vxx=Math.max(0,sumxx/count-ux*ux),vyy=Math.max(0,sumyy/count-uy*uy),vxy=sumxy/count-ux*uy;
+  const eig=(vxx+vyy)/2,spread=Math.sqrt(Math.max(0,(vxx-vyy)**2/4+vxy*vxy));
+  const major=Math.sqrt(Math.max(0,eig+spread)),minor=Math.sqrt(Math.max(0,eig-spread));
+  const axisRatio=Math.sqrt((major*major+.30)/(minor*minor+.30));
+  if(Math.max(bw,bh)>Math.max(6,maxLength)||axisRatio>maxRatio||density<.15)continue;
+  const cx=x0+ux,cy=y0+uy;
+  const dist=Math.hypot(cx-ox,cy-oy),predDist=Math.hypot(cx-ox-vx,cy-oy-vy);
+  if(otherPositions.some(p=>p&&Math.hypot(cx-p.x/sx,cy-p.y/sy)<Math.max(3.5,r*1.1)))continue;
+  const expectedCount=Math.max(2,baseArea*.65),areaErr=Math.abs(Math.log((count+1)/(expectedCount+1)));
+  const normalisedDist=Math.min(dist,predDist*.90)/Math.max(10,W*.02+speed*.65+lostCount*r);
+  const shapePenalty=Math.max(0,axisRatio-1.2)*2.9+Math.max(0,Math.max(bw,bh)/(2*r)-1.3)*1.35;
+  // A cue may have the same colour, but does not resemble the selected ball in scale/shape.
+  let score=29-appearance/count*76-areaErr*4.4-shapePenalty-normalisedDist*3.5+density*2.4;
+  if(!admissible(cx*sx,cy*sy,k))continue; // manually selected play area + safe drag margin
+  const maxJump=Math.min(Math.max(W,H)*.42,Math.max(23,W*.042,5*r)+speed*2.5+Math.min(lostCount,7)*Math.max(6,r*2.0));
+  if(dist>maxJump)continue;
+  if(score>bestScore){bestScore=score;best={x:cx*sx,y:cy*sy,ok:true,confidence:clamp((score-4)/21,0,1),shapeRatio:axisRatio,diameter:2*r*(sx+sy)/2}}
+ }
+ return bestScore>6?best:null;
+}
+
+// V0.17: red ball identity recovery. Never trust a distant red pixel blob
+// without motion consistency, felt support, and TWO consecutive detections.
+function searchRedGlobal(img,otherPositions){
+ const W=img.width,H=img.height,d=img.data,T=templates.red;
+ if(!T)return null;
+ const step=2,mw=Math.ceil(W/step),mh=Math.ceil(H/step),mask=new Uint8Array(mw*mh);
+ const radius=Math.max(2.8,T.radius);
+ for(let yy=1;yy<mh-1;yy++)for(let xx=1;xx<mw-1;xx++){
+  const x=xx*step,y=yy*step;if(!admissible(x*v.videoWidth/W,y*v.videoHeight/H,'red'))continue;
+  const i=(y*W+x)*4,redness=redBodyWeight(d[i],d[i+1],d[i+2]);
+  if(redness<.24)continue;
+  const c=ballColor(d[i],d[i+1],d[i+2]);
+  const deviation=Math.hypot(c[0]-T.c[0],c[1]-T.c[1],c[2]-T.c[2]);
+  if(deviation<Math.max(.12,T.tol*1.45))mask[yy*mw+xx]=1;
+ }
+ const visited=new Uint8Array(mask.length),queue=new Int32Array(mask.length);
+ let best=null,bestScore=-1e9;
+ for(let z=0;z<mask.length;z++){
+  if(!mask[z]||visited[z])continue;
+  let head=0,tail=1;queue[0]=z;visited[z]=1;
+  let count=0,sumx=0,sumy=0,sumxx=0,sumyy=0,sumxy=0,minx=mw,maxx=0,miny=mh,maxy=0;
+  while(head<tail&&tail<4000){
+   const k=queue[head++],x=k%mw,y=(k/mw)|0;
+   count++;sumx+=x;sumy+=y;sumxx+=x*x;sumyy+=y*y;sumxy+=x*y;
+   minx=Math.min(minx,x);maxx=Math.max(maxx,x);miny=Math.min(miny,y);maxy=Math.max(maxy,y);
+   for(const n of [k-1,k+1,k-mw,k+mw]){
+    if(n<0||n>=mask.length||visited[n]||!mask[n])continue;
+    if(Math.abs(n%mw-x)>1)continue;visited[n]=1;queue[tail++]=n;
+   }
+  }
+  const bw=(maxx-minx+1)*step,bh=(maxy-miny+1)*step,diam=Math.max(bw,bh),area=count*step*step;
+  if(count<3||tail>=4000||diam>radius*4.8||diam<radius*.65||area<Math.PI*radius*radius*.12||area>Math.PI*radius*radius*4.2)continue;
+  const ux=sumx/count,uy=sumy/count,x=ux*step,y=uy*step;
+  if(otherPositions.some(p=>p&&Math.hypot(x-p.x*W/v.videoWidth,y-p.y*H/v.videoHeight)<radius*1.5))continue;
+  const cx=sumxx/count-ux*ux,cy=sumyy/count-uy*uy,cxy=sumxy/count-ux*uy;
+  const ev=(cx+cy)/2,dd=Math.sqrt(Math.max(0,(cx-cy)**2/4+cxy*cxy));
+  const aspect=Math.sqrt((ev+dd+.15)/(Math.max(0,ev-dd)+.15));
+  if(aspect>3.15)continue;
+  let cloth=0;
+  for(let j=0;j<12;j++){
+   const a=j*Math.PI/6,fx=x+radius*1.6*Math.cos(a),fy=y+radius*1.6*Math.sin(a);
+   cloth+=feltPixel(img,fx,fy,T)>.3?1:0;
+  }
+  if(cloth<3)continue;
+  const movedFromSeed=Math.hypot(x-seeds.red.x*W/v.videoWidth,y-seeds.red.y*H/v.videoHeight);
+  if(movedFromSeed>radius*2.2&&changedSinceStart(img,x,y,radius)<.085)continue;
+  const scaleDifference=Math.abs(Math.log((area+1)/(Math.PI*radius*radius*.70+1)));
+  const score=(cloth/12)*2.2+Math.min(1,count/Math.max(1,Math.PI*radius*radius/5))*.9-aspect*.35-scaleDifference*.30;
+  if(score>bestScore){bestScore=score;best={x:x*v.videoWidth/W,y:y*v.videoHeight/H,ok:true,
+    confidence:clamp(.53+score*.15,0,.91),method:'red-global',shapeRatio:aspect};}
+ }
+ return bestScore>.10?best:null;
+}
+// V0.12: A cue and ball can belong to the SAME white connected component.
+// Independently score ball-sized discs instead of rejecting that entire component.
+// The background is sampled around each disc; cloth support and compactness help
+// reject a slim bright wooden shaft or white scoreboard lettering.
+const DISK_INNER=[[0,0],...Array.from({length:8},(_,i)=>[.38*Math.cos(i*Math.PI/4),.38*Math.sin(i*Math.PI/4)]),...Array.from({length:12},(_,i)=>[.75*Math.cos(i*Math.PI/6),.75*Math.sin(i*Math.PI/6)])];
+const DISK_OUTER=Array.from({length:16},(_,i)=>[1.55*Math.cos(i*Math.PI/8),1.55*Math.sin(i*Math.PI/8)]);
+function whitePixel(img,x,y,T){
+ const xx=Math.round(x),yy=Math.round(y);if(xx<1||yy<1||xx>=img.width-1||yy>=img.height-1)return 0;
+ const d=img.data,i=(yy*img.width+xx)*4,r=d[i],g=d[i+1],b=d[i+2];
+ const sum=r+g+b+1,a=r/sum,bb=b/sum,gg=g/sum;
+ const delta=Math.hypot(a-T.c[0],gg-T.c[1],bb-T.c[2]);
+ if(delta>Math.max(.14,T.tol*1.75))return 0;
+ const luminance=Math.max(r,g,b)/255;
+ if(luminance<Math.max(.35,T.lum*.48))return 0;
+ return 1-clamp(delta/Math.max(.20,T.tol*2.25),0,.85);
+}
+function feltPixel(img,x,y,T){
+ const xx=Math.round(x),yy=Math.round(y);if(xx<0||yy<0||xx>=img.width||yy>=img.height)return -1;
+ const d=img.data,i=(yy*img.width+xx)*4,r=d[i],g=d[i+1],b=d[i+2];
+ // Reference blue felt can change brightness greatly across the perspective-lit table.
+ const similarlyBlue=(b>r*1.23&&b>g*1.07&&g>r*.85);
+ const ref=T.bg,nearBg=Math.hypot(r-ref[0],g-ref[1],b-ref[2])<135;
+ return similarlyBlue||nearBg&&b>r*1.12?.95:0;
+}
+function changedSinceStart(img,x,y,r){
+ if(!referenceFrame||referenceFrame.width!==img.width||referenceFrame.height!==img.height)return 1;
+ let sum=0;
+ for(const [dx,dy] of [[0,0],[.48,0],[-.48,0],[0,.48],[0,-.48],[.4,.4],[-.4,-.4]]){
+  const xx=Math.round(x+dx*r),yy=Math.round(y+dy*r);
+  if(xx<0||yy<0||xx>=img.width||yy>=img.height)continue;
+  const i=(yy*img.width+xx)*4,a=img.data,b=referenceFrame.data;
+  sum+=(Math.abs(a[i]-b[i])+Math.abs(a[i+1]-b[i+1])+Math.abs(a[i+2]-b[i+2]))/(255*3);
+ }
+ return sum/7;
+}
+function discEvidence(img,x,y,r,T){
+ let hits=0,weight=0,ring=0,valid=0,blue=0;
+ for(const [a,b] of DISK_INNER){let w=whitePixel(img,x+a*r,y+b*r,T);hits+=(w>.25);weight+=w}
+ for(const [a,b] of DISK_OUTER){let f=feltPixel(img,x+a*r,y+b*r,T);if(f<0)continue;valid++;ring+=f;if(f>.5)blue++}
+ const fill=hits/DISK_INNER.length,body=weight/DISK_INNER.length,cloth=valid?ring/valid:0;
+ return {fill,body,cloth,score:body*.78+cloth*.43- Math.max(0,.52-fill)*.65};
+}
+// Cue-length bright streaks fail the filled-disc test, while a true ball can
+// retain enough interior votes despite a red spot, blur, or a partial cue overlap.
+function searchWhiteDisc(img,prev,prevprev,sx,sy,lostCount,T,otherPositions,options={}){
+ const W=img.width,H=img.height,r=clamp(T.radius,2.8,18);
+ const ox=prev.x/sx,oy=prev.y/sy;
+ const vx=prevprev?clamp((prev.x-prevprev.x)/sx,-W*.18,W*.18):0;
+ const vy=prevprev?clamp((prev.y-prevprev.y)/sy,-H*.2,H*.2):0;
+ const speed=Math.hypot(vx,vy);
+ const radius=options.global?Math.hypot(W,H):Math.min(W*.48,Math.max(35,W*.056,r*6.2)+speed*2.6+Math.min(lostCount,8)*Math.max(r*3,13));
+ const x0=options.global?Math.ceil(r+2):Math.max(Math.ceil(r+2),Math.floor(ox-radius));
+ const x1=options.global?W-Math.ceil(r+3):Math.min(W-Math.ceil(r+3),Math.ceil(ox+radius));
+ const y0=options.global?Math.ceil(r+2):Math.max(Math.ceil(r+2),Math.floor(oy-radius));
+ const y1=options.global?H-Math.ceil(r+3):Math.min(H-Math.ceil(r+3),Math.ceil(oy+radius));
+ if(x1<x0||y1<y0)return null;
+ let best=null,bestScore=-1;
+ const step=options.global?4:2;
+ for(let y=y0;y<=y1;y+=step)for(let x=x0;x<=x1;x+=step){
+  // Fast color gate: a white ball can have a red spot in its exact center;
+  // offset probes avoid relying on one central pixel.
+  if(whitePixel(img,x,y,T)<.30 && whitePixel(img,x+r*.35,y,T)<.30 && whitePixel(img,x,y+r*.35,T)<.30)continue;
+  if(!admissible(x*sx,y*sy,'white'))continue;
+  if(otherPositions.some(p=>p&&Math.hypot(x-p.x/sx,y-p.y/sy)<r*1.6))continue;
+  const origin=seeds.white,closeToSeed=origin&&Math.hypot(x-origin.x/sx,y-origin.y/sy)<r*1.4;
+  const diff=changedSinceStart(img,x,y,r);
+  // Clock text, score graphics and bright rail hardware are fixed throughout
+  // the clip. They may look round, but are not the moving ball.
+  if(!closeToSeed&&diff<.095)continue;
+  // Reject completely unrelated regions of the image using the actual
+  // observed felt, NOT the user rectangle or a fabricated cushion line.
+  let ev=discEvidence(img,x,y,r,T);
+  if(ev.fill<.49||ev.cloth<.29||ev.body<.39)continue;
+  const dist=Math.hypot(x-ox,y-oy);
+  const predicted=Math.hypot(x-(ox+vx),y-(oy+vy));
+  const motion=Math.min(dist,predicted*.8)/Math.max(1,radius);
+  const score=ev.score-motion*(options.global?.035:.12)+Math.min(.09,diff*.18);
+  if(score>bestScore){bestScore=score;best={x:x*sx,y:y*sy,ok:true,confidence:clamp((ev.score-.48)/.68,0,1),evidence:ev.score,method:options.global?'disc-global':'disc-local'}}
+ }
+ if(!best||bestScore<(options.global?.68:.62))return null;
+ // Sub-pixel / local refinement: evaluate around best with a smaller stride.
+ let x=best.x/sx,y=best.y/sy;
+ for(let dy=-2;dy<=2;dy++)for(let dx=-2;dx<=2;dx++){
+  if(!dx&&!dy)continue;const nx=x+dx,ny=y+dy;
+  if(!admissible(nx*sx,ny*sy,'white'))continue;
+  const e=discEvidence(img,nx,ny,r,T);
+  const dist=Math.hypot(nx-ox,ny-oy),pd=Math.hypot(nx-(ox+vx),ny-(oy+vy));
+  const diff=changedSinceStart(img,nx,ny,r),origin=seeds.white;
+  if(!(origin&&Math.hypot(nx-origin.x/sx,ny-origin.y/sy)<r*1.4)&&diff<.095)continue;
+  const score=e.score-Math.min(dist,pd*.8)/Math.max(1,radius)*(options.global?.035:.12)+Math.min(.09,diff*.18);
+  if(e.fill>=.48&&e.cloth>=.28&&score>bestScore){bestScore=score;best={x:nx*sx,y:ny*sy,ok:true,confidence:clamp((e.score-.48)/.68,0,1),evidence:e.score,method:options.global?'disc-global':'disc-local'}}
+ }
+ return best;
+}
+function findWhite(img,prev,prevprev,sx,sy,lostCount,otherPositions,dt){
+ const T=templates.white;
+ const local=searchWhiteDisc(img,prev,prevprev,sx,sy,lostCount,T,otherPositions);
+ if(local)return local;
+ // Frequent global reacquisition after loss. Require subsequent confirmation in
+ // the association step; NEVER draw a direct line to the old position.
+ if(lostCount>=2 && (lostCount%2===0)){
+  const whole=searchWhiteDisc(img,prev,prevprev,sx,sy,lostCount,T,otherPositions,{global:true});
+  if(whole)return whole;
+ }
+ // Connected-component method is useful on small, blurry balls but only trust
+ // it when an independent ball-sized patch passes the shape/cloth check.
+ const cc=detect(img,'white',prev,prevprev,sx,sy,lostCount,otherPositions,dt);
+ if(cc){const e=discEvidence(img,cc.x/sx,cc.y/sy,T.radius,T);
+  const x=cc.x/sx,y=cc.y/sy,r=T.radius,origin=seeds.white;
+  const closeToSeed=origin&&Math.hypot(x-origin.x/sx,y-origin.y/sy)<r*1.4;
+  if((closeToSeed||changedSinceStart(img,x,y,r)>.095)&&e.fill>=.45&&e.cloth>=.28&&e.score>.59)return {...cc,confidence:Math.min(cc.confidence,clamp((e.score-.40)/.73,0,1)),method:'disc-verified-cc'};
+ }
+ return null;
+}
+
+// V0.14: Yellow cue ball: compact learned-yellow disc + felt-surround detection.
+// Use full-image reacquisition only after a miss, and reject static scoreboard /
+// bright rail artifacts using the frame at t=0. The table polygon is NOT a rail.
+function yellowPixel(img,x,y,T){
+ const xx=Math.round(x), yy=Math.round(y);
+ if(xx<0||yy<0||xx>=img.width||yy>=img.height)return 0;
+ const i=(yy*img.width+xx)*4,d=img.data,r=d[i],g=d[i+1],b=d[i+2];
+ const m=r+g+b+1,c=[r/m,g/m,b/m];
+ const difference=Math.hypot(c[0]-T.c[0],c[1]-T.c[1],c[2]-T.c[2]);
+ // Red spot and highlight are permitted as missing votes, not new color targets.
+ if(difference>Math.min(.185,Math.max(.12,T.tol*1.08))||Math.max(r,g,b)<Math.max(55,T.lum*255*.32))return 0;
+ // Relative red/green vs blue: yellow, not cream/white wooden cue or blue cloth.
+ if(Math.min(r,g)<b*1.30||Math.abs(r-g)>Math.max(100,(r+g)*.52))return 0;
+ return 1-clamp(difference/.18,0,.77);
+}
+function yellowDiscEvidence(img,x,y,r,T){
+ let total=0,hits=0,felt=0,count=0;
+ for(const [dx,dy] of DISK_INNER){const z=yellowPixel(img,x+dx*r,y+dy*r,T);total+=z;if(z>.25)hits++}
+ for(const [dx,dy] of DISK_OUTER){const q=feltPixel(img,x+dx*r,y+dy*r,T);if(q<0)continue;felt+=q;count++}
+ const body=total/DISK_INNER.length,fill=hits/DISK_INNER.length,cloth=count?felt/count:0;
+ return {body,fill,cloth,score:body*.79+cloth*.38-Math.max(0,.48-fill)*.60};
+}
+function searchYellowDisc(img,prev,prevprev,sx,sy,lostCount,otherPositions,options={}){
+ const T=templates.yellow,W=img.width,H=img.height;
+ if(!T)return null;
+ const ox=prev.x/sx,oy=prev.y/sy,baseR=clamp(T.radius,2.8,16);
+ const vx=prevprev?clamp((prev.x-prevprev.x)/sx,-W*.24,W*.24):0;
+ const vy=prevprev?clamp((prev.y-prevprev.y)/sy,-H*.36,H*.36):0;
+ const speed=Math.hypot(vx,vy);
+ const area=options.global?Math.hypot(W,H):Math.min(W*.56,Math.max(44,W*.070,baseR*8)+speed*3.3+Math.min(lostCount,9)*Math.max(18,baseR*4));
+ const x0=options.global?Math.ceil(baseR+5):Math.max(5,Math.floor(ox-area));
+ const x1=options.global?W-Math.ceil(baseR+6):Math.min(W-6,Math.ceil(ox+area));
+ const y0=options.global?Math.ceil(baseR+5):Math.max(5,Math.floor(oy-area));
+ const y1=options.global?H-Math.ceil(baseR+6):Math.min(H-6,Math.ceil(oy+area));
+ if(x1<x0||y1<y0)return null;
+ const step=options.global?4:2;
+ let best=null,bestScore=-Infinity;
+ for(let y=y0;y<=y1;y+=step)for(let x=x0;x<=x1;x+=step){
+  if(y<baseR+1||y>=H-baseR-1||x<baseR+1||x>=W-baseR-1)continue;
+  if(!admissible(x*sx,y*sy,'yellow'))continue;
+  if(yellowPixel(img,x,y,T)<.23&&yellowPixel(img,x+baseR*.40,y,T)<.23&&yellowPixel(img,x,y+baseR*.40,T)<.23)continue;
+  if(otherPositions.some(p=>p&&Math.hypot(x-p.x/sx,y-p.y/sy)<Math.max(4,baseR*1.55)))continue;
+  const seed=seeds.yellow,distSeed=Math.hypot(x-seed.x/sx,y-seed.y/sy);
+  const change=changedSinceStart(img,x,y,baseR);
+  // Only the original stationary ball can match the first-frame background.
+  if(distSeed>baseR*2&&change<.10)continue;
+  const r=baseR; // V1.08: no fixed perspective-dependent size inflation
+  const e=yellowDiscEvidence(img,x,y,r,T);
+  if(e.fill<.38||e.body<.30||e.cloth<.30)continue;
+  const distance=Math.hypot(x-ox,y-oy),predicted=Math.hypot(x-ox-vx,y-oy-vy);
+  // Weak motion penalty: fast launch is allowed but static false positives are not.
+  const displacement=Math.min(distance,predicted*.8)/Math.max(1,area);
+  const score=e.score-displacement*(options.global?.05:.12)+Math.min(.085,change*.14);
+  if(score>bestScore){bestScore=score;best={x:x*sx,y:y*sy,confidence:clamp((e.score-.32)/.52,0,1),ok:true,evidence:e.score,method:options.global?'yellow-global':'yellow-local'}}
+ }
+ if(!best||bestScore<(options.global?.485:.51))return null;
+ // Refine winner at native working-resolution pixel positions.
+ const bx=best.x/sx,by=best.y/sy;
+ for(let dy=-3;dy<=3;dy++)for(let dx=-3;dx<=3;dx++){
+  const x=bx+dx,y=by+dy;
+  if(x<baseR+1||x>=W-baseR-1||y<baseR+1||y>=H-baseR-1)continue;
+  if(!admissible(x*sx,y*sy,'yellow'))continue;
+  const seed=seeds.yellow,ds=Math.hypot(x-seed.x/sx,y-seed.y/sy),change=changedSinceStart(img,x,y,baseR);
+  if(ds>baseR*2&&change<.10)continue;
+  const r=baseR; // V1.08: no fixed perspective-dependent size inflation
+  const e=yellowDiscEvidence(img,x,y,r,T);
+  if(e.fill<.38||e.body<.30||e.cloth<.30)continue;
+  const distance=Math.hypot(x-ox,y-oy),predicted=Math.hypot(x-ox-vx,y-oy-vy);
+  const score=e.score-Math.min(distance,predicted*.8)/Math.max(1,area)*(options.global?.05:.12)+Math.min(.085,change*.14);
+  if(score>bestScore){bestScore=score;best={x:x*sx,y:y*sy,confidence:clamp((e.score-.32)/.52,0,1),ok:true,evidence:e.score,method:options.global?'yellow-global':'yellow-local'}}
+ }
+ return best;
+}
+// V1.08: derive the yellow ball's actual observed center from its own pixels.
+// Reject shadows (not yellow), avoid any formula that makes the ball bigger
+// just because it is closer to the bottom of the video.
+function yellowObservedCenter(img,hit,prev,prevprev,sx,sy,others=[]){
+ const T=templates.yellow;if(!T||!hit||!hit.ok)return null;
+ const W=img.width,H=img.height,r=clamp(T.radius,2.8,16),px=hit.x/sx,py=hit.y/sy;
+ // Crop must contain the ENTIRE observed disc, even when the coarse detector
+ // lands on its left/right bright edge or the near-side ball is larger.
+ const reach=Math.max(23,Math.min(49,r*5.1));
+ const x0=Math.max(1,Math.floor(px-reach)),x1=Math.min(W-2,Math.ceil(px+reach));
+ const y0=Math.max(1,Math.floor(py-reach)),y1=Math.min(H-2,Math.ceil(py+reach));
+ const ww=x1-x0+1,hh=y1-y0+1,mask=new Uint8Array(ww*hh),seen=new Uint8Array(ww*hh);
+ for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++){
+  if(yellowPixel(img,x,y,T)>.13)mask[(y-y0)*ww+x-x0]=1;
+ }
+ let best=null,scoreBest=-Infinity;
+ for(let z=0;z<mask.length;z++){
+  if(!mask[z]||seen[z])continue;
+  const queue=[z];seen[z]=1;let n=0,sumX=0,sumY=0,minX=ww,maxX=0,minY=hh,maxY=0;
+  for(let j=0;j<queue.length;j++){
+   const idx=queue[j],ix=idx%ww,iy=(idx/ww)|0;
+   n++;sumX+=ix;sumY+=iy;minX=Math.min(minX,ix);maxX=Math.max(maxX,ix);minY=Math.min(minY,iy);maxY=Math.max(maxY,iy);
+   for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){
+    if(!dx&&!dy)continue;const nx=ix+dx,ny=iy+dy;
+    if(nx<0||ny<0||nx>=ww||ny>=hh)continue;
+    const q=ny*ww+nx;if(mask[q]&&!seen[q]){seen[q]=1;queue.push(q)}
+   }
+  }
+  const bw=maxX-minX+1,bh=maxY-minY+1;
+  // Scale is NOT learned from other videos, and never grows with screen Y.
+  // A single frame can contain more yellow pixels from nearer viewpoint or blur.
+  if(n<Math.max(11,r*r*.36)||n>Math.max(300,r*r*22))continue;
+  if(Math.min(bw,bh)<Math.max(3,r*.68)||Math.max(bw,bh)>Math.max(30,r*5.5))continue;
+  const aspect=Math.max(bw,bh)/Math.max(1,Math.min(bw,bh));
+  if(aspect>2.25)continue;
+  const xx=x0+(minX+maxX)/2*.45+sumX/n*.55;
+  const yy=y0+(minY+maxY)/2*.45+sumY/n*.55;
+  const distance=Math.hypot(xx-px,yy-py);
+  if(distance>Math.max(11,r*2.45))continue;
+  if(others.some(o=>o&&Math.hypot(xx-o.x/sx,yy-o.y/sy)<Math.max(4,r*1.75)))continue;
+  const density=n/(bw*bh);
+  if(density<.34)continue;
+  const effectiveRadius=clamp((bw+bh)*.27,r*.75,r*2.6);
+  const solid=yellowDiscEvidence(img,xx,yy,effectiveRadius,T);
+  if(solid.body<.21||solid.fill<.30)continue;
+  // Candidate is the whole visible yellow component, not a high-scoring
+  // sample within the colored disc. Penalize implausible temporal jumps.
+  const predicted=prevprev?{x:(prev.x+(prev.x-prevprev.x))/sx,y:(prev.y+(prev.y-prevprev.y))/sy}:null;
+  const temporal=predicted?Math.hypot(xx-predicted.x,yy-predicted.y):distance;
+  const score=solid.body*2.0+solid.fill*.75+Math.min(1,n/(r*r*3))*.65+
+    density*.45-Math.abs(Math.log(aspect))*.65-
+    distance/Math.max(12,r*4)*.22-Math.min(2,temporal/Math.max(8,r*2.5))*.12;
+  if(score>scoreBest){scoreBest=score;best={x:xx*sx,y:yy*sy,confidence:Math.min(hit.confidence,.87),
+    method:'yellow-full-blob-center',yellowShape:{count:n,width:bw,height:bh,density,fill:solid.fill,score:solid.score},
+    observedShift:distance*(sx+sy)*.5};}
+ }
+ return best;
+}
+function validateYellowCenter(img,found,prev,prevprev,sx,sy,others){
+ if(!$('yellowCentroid').checked||!found)return found;
+ const q=yellowObservedCenter(img,found,prev,prevprev,sx,sy,others);
+ if(!q)return found;
+ // Keep original detector coordinate separately for exports and A/B diagnosis.
+ const distance=Math.hypot(q.x-found.x,q.y-found.y);
+ const limit=Math.max(13*sx,templates.yellow.radius*sx*2.5);
+ if(distance>limit)return found;
+ // Minor vertical disagreement may come from shadow removing bottom pixels.
+ // Blend when both independent estimators nearly agree; for larger errors
+ // use the reobserved silhouette rather than preserving an old Y outlier.
+ const selectedY=Math.abs(q.y-found.y)<=2.3*sx?found.y*.58+q.y*.42:q.y;
+ return {...found,x:q.x,y:selectedY,originalX:found.x,originalY:found.y,
+   originalMethod:found.method,method:q.method,centroidShift:distance,yellowShape:q.yellowShape};
+}
+function findYellow(img,prev,prevprev,sx,sy,lostCount,others,dt){
+ const local=searchYellowDisc(img,prev,prevprev,sx,sy,lostCount,others);
+ if(local)return local;
+ if(lostCount>=1&&lostCount%2===1){
+  const global=searchYellowDisc(img,prev,prevprev,sx,sy,lostCount,others,{global:true});
+  if(global)return global;
+ }
+ // The V0.13 component detector remains a fallback, but must pass an independent
+ // patch and background-change validation. Fixed cue/rail blobs are not accepted.
+ const cc=detect(img,'yellow',prev,prevprev,sx,sy,lostCount,others,dt);
+ if(cc){
+  const x=cc.x/sx,y=cc.y/sy,r=clamp(templates.yellow.radius,2.8,16),e=yellowDiscEvidence(img,x,y,r,templates.yellow);
+  const seed=seeds.yellow,ds=Math.hypot(x-seed.x/sx,y-seed.y/sy);
+  if((ds<r*2||changedSinceStart(img,x,y,r)>.10)&&e.fill>.46&&e.cloth>.23&&e.score>.55)
+   return {...cc,confidence:Math.min(cc.confidence,clamp((e.score-.38)/.53,0,1)),method:'yellow-verified-cc'};
+ }
+ return null;
+}
+// V0.16: offline evidence-based recovery for brief fast-motion yellow ball gaps.
+// Never infer a cushion reflection or draw an unobserved point: reread each frame.
+function yellowMovingBlob(img,gx,gy,rad,sx,sy){
+ const T=templates.yellow,W=img.width,H=img.height;
+ const x0=Math.max(2,Math.floor(gx-rad)),x1=Math.min(W-3,Math.ceil(gx+rad));
+ const y0=Math.max(2,Math.floor(gy-rad)),y1=Math.min(H-3,Math.ceil(gy+rad));
+ const width=x1-x0+1,height=y1-y0+1;
+ if(width<=0||height<=0)return null;
+ const mask=new Uint8Array(width*height),votes=new Float32Array(width*height);
+ for(let y=y0;y<=y1;y++)for(let x=x0;x<=x1;x++){
+  if(Math.hypot(x-gx,y-gy)>rad||!admissible(x*sx,y*sy,'yellow'))continue;
+  let z=yellowPixel(img,x,y,T);
+  // High-speed motion blur can desaturate the learned yellow template. Accept
+  // genuinely yellow chroma even when its luminance differs from the seed.
+  if(z<.37){const ix=(y*W+x)*4,d=img.data,rr=d[ix],gg=d[ix+1],bb=d[ix+2];
+   if(rr>115&&gg>115&&rr>bb*1.54&&gg>bb*1.50&&Math.abs(rr-gg)<Math.max(rr,gg)*.39)
+    z=Math.max(z,.42);
+  }
+  if(z<.37)continue;
+  if(changedSinceStart(img,x,y,Math.max(2,T.radius*.65))<.07&&Math.hypot(x-seeds.yellow.x/sx,y-seeds.yellow.y/sy)>T.radius*2)continue;
+  const ind=(y-y0)*width+(x-x0);mask[ind]=1;votes[ind]=z;
+ }
+ const visited=new Uint8Array(mask.length);let best=null,bestScore=-Infinity;
+ for(let k=0;k<mask.length;k++){
+  if(!mask[k]||visited[k])continue;
+  let head=0,stack=[k];visited[k]=1;
+  let n=0,weight=0,mx=0,my=0,minx=Infinity,maxx=-Infinity,miny=Infinity,maxy=-Infinity;
+  while(head<stack.length){
+   const ind=stack[head++],x=x0+ind%width,y=y0+Math.floor(ind/width),wt=votes[ind];
+   n++;weight+=wt;mx+=x*wt;my+=y*wt;
+   minx=Math.min(minx,x);maxx=Math.max(maxx,x);miny=Math.min(miny,y);maxy=Math.max(maxy,y);
+   if(n>210)break;
+   for(let ddy=-1;ddy<=1;ddy++)for(let ddx=-1;ddx<=1;ddx++){
+    if(!ddx&&!ddy)continue;
+    const nx=x-x0+ddx,ny=y-y0+ddy;
+    if(nx<0||nx>=width||ny<0||ny>=height)continue;
+    const ni=ny*width+nx;
+    if(mask[ni]&&!visited[ni]){visited[ni]=1;stack.push(ni)}
+   }
+  }
+  if(n<2||n>200||!weight)continue;
+  const cx=mx/weight,cy=my/weight,dx=maxx-minx+1,dy=maxy-miny+1;
+  const aspect=Math.max(dx,dy)/Math.max(1,Math.min(dx,dy));
+  if(aspect>5.5||Math.max(dx,dy)>Math.max(30,T.radius*7))continue;
+  const dist=Math.hypot(cx-gx,cy-gy);
+  const avg=weight/n;
+  const score=avg*.62 + Math.min(n,16)*.019 - dist/rad*.52 - Math.max(0,aspect-2.7)*.055;
+  if(score>bestScore){bestScore=score;best={x:cx*sx,y:cy*sy,ok:true,confidence:clamp(.35+avg*.48,0,.87),method:'yellow-evidence-recovery',evidence:score,pixels:n,guideDist:dist*sx}}
+ }
+ return best&&bestScore>.22?best:null;
+}
+async function recoverYellowMotionGaps(){
+ const a=tracks.yellow,T=templates.yellow;
+ if(!T||!a.length)return {points:0,gaps:0};
+ const sx=v.videoWidth/scan.width,sy=v.videoHeight/scan.height;
+ let repairedPoints=0,repairedGaps=0;
+ for(let s=1;s<a.length-1&&!stop;){
+  if(a[s].ok){s++;continue}
+  let e=s;while(e<a.length&&!a[e].ok)e++;
+  if(e>=a.length)break;
+  const count=e-s, L=a[s-1],R=a[e],dt=R.t-L.t;
+  if(!L.ok||!R.ok||count>Math.ceil(1.10/frameStep)||dt>1.15||dt<0){s=e;continue}
+  const dist=Math.hypot(R.x-L.x,R.y-L.y);
+  if(dist>Math.max(340,v.videoWidth*.36)){s=e;continue}
+  const found=[];
+  for(let j=s;j<e&&!stop;j++){
+   await seek(a[j].t);
+   sc.drawImage(v,0,0,scan.width,scan.height);
+   const img=sc.getImageData(0,0,scan.width,scan.height),f=(a[j].t-L.t)/dt;
+   const gx=(L.x+(R.x-L.x)*f)/sx,gy=(L.y+(R.y-L.y)*f)/sy;
+   const radius=Math.max(37,Math.min(64,26+dist*.13));
+   const p=yellowMovingBlob(img,gx,gy,radius,sx,sy);
+   found.push(p);
+  }
+  // No invented segments. Partial detections can be kept as independent
+  // starts, but only a *fully* observed gap can reconnect both endpoints.
+  const candidates=[L,...found.filter(Boolean),R];
+  let plausible=found.every(Boolean);
+  if(plausible){
+   for(let j=1;j<candidates.length;j++){
+    const d=Math.hypot(candidates[j].x-candidates[j-1].x,candidates[j].y-candidates[j-1].y);
+    if(d>Math.max(48,dist/(count+1)*2.35+14)){plausible=false;break}
+   }
+  }
+  if(plausible){
+   for(let j=s;j<e;j++)a[j]={...found[j-s],t:a[j].t,recovered:true};
+   R.reacquired=false;
+   repairedPoints+=count;repairedGaps++;
+  }else{
+   // Keep separately verified points without inventing missing observations.
+   // A one-frame hole remains visually dotted only if both real neighbors
+   // independently support it. Never bridge a long unobserved distance.
+   let used=0;
+   for(let j=s;j<e;j++){
+    const p=found[j-s];if(!p)continue;
+    const before=j===s?L:found[j-s-1],after=j===e-1?R:found[j-s+1];
+    if(!before&&!after)continue;
+    const near=(q)=>q&&Math.hypot(q.x-p.x,q.y-p.y)<Math.max(46,dist/(count+1)*2.5+12);
+    if(!near(before)&&!near(after))continue;
+    a[j]={...p,t:a[j].t,recovered:true};used++;
+   }
+   repairedPoints+=used;
+   if(used)repairedGaps++;
+   if(found[count-1]&&a[e-1].ok)R.reacquired=false;
+  }
+  s=e;
+ }
+ return {points:repairedPoints,gaps:repairedGaps};
+}
+// Retroactive quality check: remove isolated one-frame ID switches, not genuine continuous movement.
+function validateTracks(){
+ for(const k of keys){const a=tracks[k],T=templates[k];if(!T)continue;
+  const allowance=Math.max(12,T.radius*(v.videoWidth/scan.width)*4.3);
+  for(let i=1;i<a.length-1;i++){
+   const p=a[i],q=a[i-1],n=a[i+1];if(!p.ok||!q.ok||!n.ok)continue;
+   const incoming=Math.hypot(p.x-q.x,p.y-q.y),outgoing=Math.hypot(p.x-n.x,p.y-n.y),across=Math.hypot(q.x-n.x,q.y-n.y);
+   if(incoming>allowance&&outgoing>allowance&&across<Math.min(incoming,outgoing)*.38){p.ok=false;p.rejected='single_frame_outlier'}
+  }
+ }
+}
+// V0.12: purely visual jitter correction. Raw MOT detections are NEVER changed.
+// Five-frame local linear regression reduces small centroid wobble; samples adjacent
+// to a sustained velocity change / close ball contact / reacquisition are untouched.
+function stabilizeTracks(){
+ const radiusPx=k=>Math.max(5,(templates[k]?.radius||6)*(v.videoWidth/Math.max(1,scan.width)));
+ const stats={};
+ for(const k of keys){
+  const a=tracks[k],radius=radiusPx(k);let changed=0,changedPoints=new Set();
+  for(const p of a){delete p.drawX;delete p.drawY}
+  const chunks=[];let chunk=[];
+  for(const p of a){
+   const last=chunk[chunk.length-1];
+   const broken=!p.ok||p.reacquired||(last&&(p.t-last.t>frameStep*1.65||Math.hypot(p.x-last.x,p.y-last.y)>Math.max(36,radius*7)));
+   if(broken&&chunk.length){chunks.push(chunk);chunk=[]}
+   if(p.ok)chunk.push(p);
+  }
+  if(chunk.length)chunks.push(chunk);
+  for(const seg of chunks){
+   if(seg.length<5)continue;
+   const protectedFrames=new Set();
+   for(let j=3;j<seg.length-3;j++){
+    const left={x:seg[j-1].x-seg[j-3].x,y:seg[j-1].y-seg[j-3].y};
+    const right={x:seg[j+3].x-seg[j+1].x,y:seg[j+3].y-seg[j+1].y};
+    const al=Math.hypot(left.x,left.y),bl=Math.hypot(right.x,right.y);
+    const turned=al>Math.max(6,radius*.9)&&bl>Math.max(6,radius*.9)&&
+      (left.x*right.x+left.y*right.y)/(al*bl)<Math.cos(Math.PI/5.5);
+    const launch=(al<Math.max(2,radius*.22)&&bl>Math.max(12,radius*1.75))||
+      (bl<Math.max(2,radius*.22)&&al>Math.max(12,radius*1.75));
+    if(turned||launch)for(let d=-2;d<=2;d++)protectedFrames.add(j+d);
+   }
+   for(let j=2;j<seg.length-2;j++){
+    if(protectedFrames.has(j))continue;
+    const mid=seg[j];
+    // When two balls touch, a legitimate collision can create a sharp corner.
+    const nearContact=keys.some(other=>{if(other===k)return false;
+      const p=tracks[other][Math.round(mid.t/frameStep)];
+      return p&&p.ok&&Math.abs(p.t-mid.t)<frameStep*.55&&
+        Math.hypot(p.x-mid.x,p.y-mid.y)<2.5*(radius+radiusPx(other));});
+    if(nearContact)continue;
+    const window=seg.slice(j-2,j+3),weights=[1,2,3,2,1];
+    let sw=0,st=0,stt=0,sx=0,sy=0,stx=0,sty=0;
+    for(let z=0;z<5;z++){
+     const t=window[z].t-mid.t,w=weights[z];sw+=w;st+=w*t;stt+=w*t*t;
+     sx+=w*window[z].x;sy+=w*window[z].y;stx+=w*t*window[z].x;sty+=w*t*window[z].y;
+    }
+    const den=sw*stt-st*st;if(den<1e-10)continue;
+    const fitX=(sx*stt-stx*st)/den,fitY=(sy*stt-sty*st)/den;
+    // Reject a window that is evidently curved or contains a candidate switch.
+    const vx=(sw*stx-st*sx)/den,vy=(sw*sty-st*sy)/den;
+    const errors=window.map((p,z)=>Math.hypot(p.x-fitX-vx*(p.t-mid.t),p.y-fitY-vy*(p.t-mid.t)));
+    const sorted=errors.slice().sort((x,y)=>x-y);
+    if(sorted[2]>Math.max(3.0,radius*.57))continue;
+    // Never move the displayed center more than a fraction of the detected ball radius.
+    const dx=fitX-mid.x,dy=fitY-mid.y,err=Math.hypot(dx,dy),maxCorrection=Math.min(k==='white'?4.8:3.2,Math.max(1.25,radius*(k==='white'?.44:.28)));
+    if(err>.08){const scale=Math.min(1,maxCorrection/err);mid.drawX=mid.x+dx*scale;mid.drawY=mid.y+dy*scale;changedPoints.add(mid);changed++}
+   }
+  }
+  // Small, isolated zigzags only: neighboring motion BEFORE and AFTER must
+  // point in the same direction. A real sustained cushion/ball deflection
+  // has opposing outer velocities and is left completely unchanged.
+  for(const seg of chunks){
+   if(seg.length<7)continue;
+   const updates=[];
+   const position=p=>({x:Number.isFinite(p.drawX)?p.drawX:p.x,
+                       y:Number.isFinite(p.drawY)?p.drawY:p.y});
+   for(let j=3;j<seg.length-3;j++){
+    const w=seg.slice(j-3,j+4),P=w.map(position);
+    if(w.some((p,z)=>z&&p.t-w[z-1].t>frameStep*1.65))continue;
+    const L={x:P[2].x-P[0].x,y:P[2].y-P[0].y};
+    const R={x:P[6].x-P[4].x,y:P[6].y-P[4].y};
+    const vl=Math.hypot(L.x,L.y),vr=Math.hypot(R.x,R.y);
+    const motionMin=Math.max(1.6,radius*.18);
+    if(vl<motionMin||vr<motionMin||Math.max(vl,vr)>Math.min(vl,vr)*3.0)continue;
+    const cos=(L.x*R.x+L.y*R.y)/(vl*vr);
+    if(cos<.91)continue;
+    const forward={x:L.x/vl+R.x/vr,y:L.y/vl+R.y/vr},flen=Math.hypot(forward.x,forward.y);
+    forward.x/=flen;forward.y/=flen;
+    const guess={x:(P[2].x+P[4].x)*.5,y:(P[2].y+P[4].y)*.5};
+    const delta={x:P[3].x-guess.x,y:P[3].y-guess.y};
+    const error=Math.hypot(delta.x,delta.y);
+    const backwardA=(P[3].x-P[2].x)*forward.x+(P[3].y-P[2].y)*forward.y;
+    const backwardB=(P[4].x-P[3].x)*forward.x+(P[4].y-P[3].y)*forward.y;
+    const perpendicular=Math.abs(delta.x*forward.y-delta.y*forward.x);
+    const spike=backwardA< -Math.max(.65,radius*.10)||backwardB< -Math.max(.65,radius*.10);
+    if(!spike&&perpendicular<=Math.max(2.3,radius*.28))continue;
+    if(error<=Math.max(1.35,radius*.16)||error>Math.max(25,radius*3.0))continue;
+    // Protect close contacts, which can produce genuine instantaneous turns.
+    const nearContact=keys.some(other=>{
+     if(other===k)return false;
+     const q=tracks[other][Math.round(w[3].t/frameStep)];
+     return q&&q.ok&&Math.abs(q.t-w[3].t)<frameStep*.55&&
+       Math.hypot(q.x-w[3].x,q.y-w[3].y)<2.5*(radius+radiusPx(other));
+    });
+    if(nearContact)continue;
+    const shift=Math.min(error,Math.max(3.5,radius*.95));
+    updates.push({p:w[3],x:P[3].x-delta.x*shift/error,
+                      y:P[3].y-delta.y*shift/error});
+   }
+   // Apply all adjustments simultaneously so one cleaned point cannot
+   // contaminate the decision on the next point in the same 7-frame window.
+   for(const u of updates){u.p.drawX=u.x;u.p.drawY=u.y;changedPoints.add(u.p);changed++}
+  }
+  stats[k]=changedPoints.size;
+ }
+ return stats;
+}
+$('preview').onclick=()=>{if(!analyzed)return;previewMode=!previewMode;if(previewMode)$('full').checked=false;$('preview').textContent=previewMode?'◉ 트래킹 라인 표시 중':'◎ 트래킹 라인 보기';$('preview').classList.toggle('activePreview',previewMode);$('preview').setAttribute('aria-pressed',String(previewMode));draw()};let advancedStats={};
+let shadowStats={available:0,accepted:0,legacy:0,ambiguous:0};
+function annotateGeometry(img,k,point,i,sx,sy){
+ if(!point||!point.ok||!templates[k])return point;
+ if(k!=='white'&&$('advancedScope').value!=='all')return point;
+ try{
+  const legacy=ArchibaldAdvanced.refine(img,point,templates[k],k,sx,sy,i);
+  const T=templates[k],radius=T.radius*(sx+sy)*.5;
+  const shadow=ArchibaldShadow.refine(img,point,radius,sx,sy,i);
+  if(legacy)point.legacyGeometry={x:legacy.x,y:legacy.y,quality:legacy.quality,
+    coverage:legacy.coverage,radius:legacy.radius,inliers:legacy.inliers,residual:legacy.residual};
+  if(shadow)point.shadowGeometry={x:shadow.x,y:shadow.y,quality:shadow.quality,
+    coverage:shadow.coverage,radius:shadow.radius,inliers:shadow.inliers,residual:shadow.residual,
+    clothSupport:shadow.clothSupport};
+  if(shadow)shadowStats.available++;
+  const candidate=selectGeometry(point);
+  if(candidate)point.geometry={...candidate};
+ }catch(e){if(i===1)console.warn('Shadow-aware center refinement skipped:',e)}
+ return point;
+}
+function selectGeometry(p){
+ const a=p.legacyGeometry,b=p.shadowGeometry;
+ if(!$('shadowGeometry').checked)return a||null;
+ if(!b)return a||null;
+ // Multi-sector shading robustness does not justify an unsupported jump.
+ // If both estimators disagree dramatically, retain the V1.06 estimate.
+ const disagreement=a?Math.hypot(a.x-b.x,a.y-b.y):0;
+ const radius=Number.isFinite(b.radius)?b.radius:8;
+ if(a&&disagreement>Math.max(3.0,radius*.51)&&a.quality>=.66)return a;
+ if(b.quality>=.66&&b.clothSupport>=.48&&(!a||b.quality>=a.quality-.13))return b;
+ return a||null;
+}
+function optimizeGeometry(){
+ advancedStats={};shadowStats={available:0,accepted:0,legacy:0,ambiguous:0};
+ for(const k of keys){
+  if(k!=='white'&&$('advancedScope').value!=='all')continue;
+  const a=tracks[k];
+  for(const p of a){if(!p.ok)continue;
+   const chosen=selectGeometry(p);
+   if(chosen)p.geometry={...chosen};else delete p.geometry;
+   if(p.shadowGeometry){shadowStats.available++;
+    if(chosen===p.shadowGeometry||chosen?.clothSupport!==undefined)shadowStats.accepted++;
+    else if(p.legacyGeometry)shadowStats.legacy++;
+   }
+  }
+  advancedStats[k]=ArchibaldAdvanced.temporal(tracks,k,Math.max(5,(templates[k]?.radius||6)*v.videoWidth/scan.width),frameStep);
+ }
+ $('advancedStatus').textContent='정밀 검증 완료 · '+Object.entries(advancedStats).map(([k,s])=>`${names[k]} 공 ${s.changed}개 중심 좌표 재평가 / ${s.geometryPoints}개 외곽 후보`).join(' · ');
+ $('shadowStatus').textContent=`V1.08 외곽 후보 ${shadowStats.available}개 · 적용 가능 후보 ${shadowStats.accepted}개 · V1.06 선택 ${shadowStats.legacy}개 (기존 중심 검출 좌표 유지)`;
+ smoothLayerCache.clear();
+}
+async function reviewCollisionGaps(){
+ if(!$('collisionReview').checked)return {events:0,corrected:0,recovered:0};
+ const diameters=Object.fromEntries(keys.map(k=>[k,2*(seeds[k]?.radius||8)]));
+ const model=projectiveModel();
+ const assessment=ArchibaldV106.trajectoryHypotheses(tracks,diameters,frameStep,model);
+ let corrected=0,recovered=0;
+ for(const candidate of assessment.corrections){
+  const p=tracks[candidate.ball]?.[candidate.frame];if(!p?.ok||p.reacquired)continue;
+  // Conservative display-only candidate; true recorded detection untouched.
+  p.collisionX=candidate.x;p.collisionY=candidate.y;p.collisionReason=candidate.reason;corrected++;
+ }
+ // Re-read ONLY short missing gaps beside close interactions, using *actual*
+ // video pixels. Never silently convert interpolation into an observation.
+ const targets=[];
+ for(const k of keys){let a=tracks[k],radius=diameters[k]/2;
+  for(let i=2;i<a.length-2;i++){
+   if(a[i]?.ok)continue;
+   const L=a[i-1],R=a[i+1];if(!L?.ok||!R?.ok)continue;
+   const x=(L.x+R.x)/2,y=(L.y+R.y)/2;
+   const close=keys.filter(o=>o!==k).some(o=>tracks[o]?.[i]?.ok&&Math.hypot(x-tracks[o][i].x,y-tracks[o][i].y)<radius+(diameters[o]/2)*2);
+   if(close)targets.push({k,i,x,y,radius});
+  }
+ }
+ for(const q of targets.slice(0,20)){
+  if(stop)break;
+  try{
+   await seek(Math.min(v.duration-.005,q.i*frameStep));
+   sc.drawImage(v,0,0,scan.width,scan.height);const img=sc.getImageData(0,0,scan.width,scan.height);
+   const sx=v.videoWidth/scan.width,sy=v.videoHeight/scan.height,others=keys.filter(k=>k!==q.k).map(k=>tracks[k][q.i]).filter(p=>p?.ok);
+   const pseudo={x:q.x,y:q.y,t:q.i*frameStep};
+   let candidate=q.k==='white'?findWhite(img,pseudo,null,sx,sy,0,others,frameStep):q.k==='yellow'?findYellow(img,pseudo,null,sx,sy,0,others,frameStep):detect(img,q.k,pseudo,null,sx,sy,0,others,frameStep);
+   if(!candidate||candidate.confidence<.43||Math.hypot(candidate.x-q.x,candidate.y-q.y)>Math.max(12,q.radius*1.35))continue;
+   if(others.some(o=>Math.hypot(o.x-candidate.x,o.y-candidate.y)<Math.max(7,q.radius*.92)))continue;
+   const gg=ArchibaldAdvanced.refine(img,candidate,templates[q.k],q.k,sx,sy,q.i);
+   if(gg&&gg.quality<.42)continue;
+   tracks[q.k][q.i]={...candidate,t:q.i*frameStep,ok:true,confidence:Math.min(.86,candidate.confidence),method:'collision-frame-reobserved',verifiedByPixels:true};recovered++;
+  }catch(e){console.warn('Collision verification skipped:',e)}
+ }
+ collisionStats={events:assessment.events.length,candidates:assessment.corrections.length,corrected,recovered,ambiguous:assessment.ambiguous.length,
+     planar:!!model};
+ $('collisionStatus').textContent=`충돌 후보 ${collisionStats.events}건 · 영상 재확인 ${recovered}프레임 · 표시 중심 후보 재평가 ${corrected}개 · 원근 평면 검사 ${model?'사용':'미사용'}`;
+ return collisionStats;
+}
+$('analyze').onclick=async()=>{if(working)return;v.pause();working=true;stop=false;analyzed=false;enable();$('cancel').disabled=false;$('progress').hidden=false;$('progress').value=0;smoothLayerCache.clear();tracks={white:[],yellow:[],red:[]};templates={};referenceFrame=null;frameStep=1/Math.min(+$('fps').value,sourceFPS);const oldTime=v.currentTime;$('full').checked=false;scan.width=Math.min(960,v.videoWidth);scan.height=Math.round(v.videoHeight*scan.width/v.videoWidth);const steps=Math.max(0,Math.round(v.duration/frameStep)-1),sx=v.videoWidth/scan.width,sy=v.videoHeight/scan.height;let lost={white:0,yellow:0,red:0},last={...seeds},previous={},pending={},launched={white:false,yellow:false,red:false},lastDetectedTime={white:0,yellow:0,red:0},recoveries={white:0,yellow:0,red:0};
+// All three stationary balls were marked at 0s; use ONE shared reference frame.
+await seek(0);sc.drawImage(v,0,0,scan.width,scan.height);
+const firstFrame=sc.getImageData(0,0,scan.width,scan.height);referenceFrame=firstFrame;
+for(const k of keys){seeds[k]=robustInitialSeed(firstFrame,k,seeds[k],sx,sy);templates[k]=learnTemplate(firstFrame,k,seeds[k],sx,sy);last[k]=seeds[k];}
+updateSeedInfo();
+status(`초기 공 중심/지름 보정 완료. 실제 ${Math.round(1/frameStep)}fps 간격으로 분석합니다.`);for(let i=0;i<=steps&&!stop;i++){let t=Math.min(v.duration-.005,i*frameStep);await seek(t);try{sc.drawImage(v,0,0,scan.width,scan.height);let img=sc.getImageData(0,0,scan.width,scan.height);for(let k of keys){
+ if(i===0){tracks[k].push(annotateGeometry(img,k,{...seeds[k],t:0,ok:true,confidence:1,origin:'seed'},i,sx,sy));continue}
+ let others=keys.filter(o=>o!==k).map(o=>last[o]);
+ let found=k==='white'?findWhite(img,last[k],lost[k]?null:previous[k],sx,sy,lost[k],others,frameStep):k==='yellow'?findYellow(img,last[k],lost[k]?null:previous[k],sx,sy,lost[k],others,frameStep):detect(img,k,last[k],lost[k]?null:previous[k],sx,sy,lost[k],others,frameStep);
+ if(k==='red'&&!found&&lost[k]>=2&&lost[k]%2===0)found=searchRedGlobal(img,others);
+ // When the ball reappears far away, the first global hit is a hypothesis.
+ // Search around that hypothesis next frame so it can be confirmed even if
+ // the last trusted ball position is still far behind.
+ if(k==='red'&&pending.red&&lost.red>0){
+  const probe=searchRedGlobal(img,others);
+  if(probe&&Math.hypot(probe.x-pending.red.x,probe.y-pending.red.y)<Math.max(35,v.videoWidth*.06))found=probe;
+ }
+ if((k==='white'||k==='yellow')&&pending[k]&&lost[k]>0){
+  const probe=k==='white'?searchWhiteDisc(img,pending[k],null,sx,sy,0,templates.white,others):searchYellowDisc(img,pending[k],null,sx,sy,0,others);
+  if(probe&&Math.hypot(probe.x-pending[k].x,probe.y-pending[k].y)<Math.max(35,v.videoWidth*.05))found=probe;
+ }
+ if(k==='yellow'&&found)found=validateYellowCenter(img,found,last[k],lost[k]?null:previous[k],sx,sy,others);
+ if(k==='white'&&found&&(launched.white&&found.confidence<.57||lost[k]>1&&found.confidence<.60))found=null;
+ if(k==='yellow'&&found&&(launched.yellow&&found.confidence<.28||lost[k]>1&&found.confidence<.27))found=null;
+ if(k==='yellow'&&found&&launched.yellow&&Math.hypot(found.x-seeds.yellow.x,found.y-seeds.yellow.y)<Math.max(18,(seeds.yellow.radius||8)*2.1)&&changedSinceStart(img,found.x/sx,found.y/sy,templates.yellow.radius)<.09)found=null;
+ if(found&&!admissible(found.x,found.y,k))found=null;
+ if(found){
+ // MOT-style association: local continuity is easy; distant global finds
+ // after occlusion must be observed AGAIN before granting the old ball ID.
+ const jump=Math.hypot(found.x-last[k].x,found.y-last[k].y),gap=t-lastDetectedTime[k];
+ const safeJump=Math.max(45,v.videoWidth*.085)*(1+Math.min(2,lost[k]*.3));
+ const needsConfirm=!!pending[k]||found.method==='disc-global'||found.method==='yellow-global'||found.method==='red-global'||lost[k]>=3||(lost[k]>1&&jump>safeJump)||(k==='red'&&jump>safeJump*1.65);
+ if(needsConfirm){
+  const q=pending[k],nearPending=q&&t-q.time<.3&&Math.hypot(q.x-found.x,q.y-found.y)<Math.max(35,v.videoWidth*.07);
+  pending[k]=nearPending?{...found,count:q.count+1,time:t}:{...found,count:1,time:t};
+  if(pending[k].count<2){lost[k]++;tracks[k].push({x:last[k].x,y:last[k].y,t,ok:false});continue}
+  // The preceding candidate was seen but not independently verified, so do NOT
+  // fabricate its line. A re-acquired track starts a separate segment.
+  found.reacquired=true;recoveries[k]++;pending[k]=null;
+ }else pending[k]=null;
+ // Reconfirmed red recovery is accepted as a NEW segment: never join a
+ // gap with an invented line, and never use the polygon as a bounce point.
+ previous[k]=lost[k]?null:last[k];last[k]={...found,t};if((k==='white'||k==='yellow')&&Math.hypot(found.x-seeds[k].x,found.y-seeds[k].y)>Math.max(34,(seeds[k].radius||8)*2.8))launched[k]=true;lastDetectedTime[k]=t;lost[k]=0;tracks[k].push(annotateGeometry(img,k,{...found,t},i,sx,sy))}else{if(pending[k]&&t-pending[k].time>.27)pending[k]=null;lost[k]++;tracks[k].push({x:last[k].x,y:last[k].y,t,ok:false});if(lost[k]>2)previous[k]=null}}}catch(err){status('프레임 분석 오류: '+err.message);stop=true;break}if(i%5===0){$('progress').value=Math.round(i/steps*100);status(`분석 중 ${Math.round(i/steps*100)}% · ${i+1}/${steps+1} 프레임`);await new Promise(r=>setTimeout(r,0))}}const repairStats=stop?{points:0,gaps:0}:await recoverYellowMotionGaps();const interactions=stop?{events:0,corrected:0,recovered:0}:await reviewCollisionGaps();validateTracks();const yellowValidated=tracks.yellow.filter(p=>p.ok&&p.method==='yellow-full-blob-center').length;$('yellowStatus').textContent=`V1.08 노란 공 관측 중심 ${yellowValidated}프레임 · 기존 검출점 별도 보존 · 고정 지름 확대 제거`;const stabilized=stabilizeTracks();optimizeGeometry();smoothLayerCache.clear();working=false;analyzed=keys.some(k=>tracks[k].some(p=>p.ok));$('progress').value=100;$('cancel').disabled=true;previewMode=analyzed;$('full').checked=false;$('preview').textContent=previewMode?'◉ 트래킹 라인 표시 중':'◎ 트래킹 라인 보기';$('preview').classList.toggle('activePreview',previewMode);$('preview').setAttribute('aria-pressed',String(previewMode));enable();await seek(oldTime);status(`${stop?'중단됨':'분석 완료'} · 흰 공 ${tracks.white.filter(p=>p.ok).length}개 (재탐색 ${recoveries.white}회) / 노란 공 ${tracks.yellow.filter(p=>p.ok).length}개 (재탐색 ${recoveries.yellow}회) / 빨간 공 ${tracks.red.filter(p=>p.ok).length}개 위치 검출\n추적 결과를 재생하며 확인하세요. 정밀 중심 체크박스로 기존 궤적과 즉시 비교할 수 있습니다. 실제 검출 궤적은 기본 실선, 양끝이 확인된 누락 구간은 더 투명한 실선으로 표시합니다. 경계선으로 궤적을 연장하지 않습니다. 충돌 전후 재검증 ${interactions.events}건 · 실제 프레임 복구 ${interactions.recovered}건. 노란 공 실제 영상 재검출: ${repairStats.points}프레임 (${repairStats.gaps}구간). 미세 보정: 흰 ${stabilized.white} / 노란 ${stabilized.yellow} / 빨간 ${stabilized.red} 프레임 (표시 좌표만 변경).`);draw()};$('cancel').onclick=()=>{stop=true;status('중단 요청 중…')};$('clear').onclick=()=>{smoothLayerCache.clear();advancedStats={};$('advancedStatus').textContent='분석 대기';tracks={white:[],yellow:[],red:[]};analyzed=false;previewMode=false;$('preview').textContent='◎ 트래킹 라인 보기';$('preview').classList.remove('activePreview');enable();draw();status('궤적을 초기화했습니다. 공의 초기 지정은 유지됩니다.')};function save(name,data,type){const blob=new Blob([data],{type}),u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),10000)}$('json').onclick=()=>save('archibald_carom_tracks_v108.json',JSON.stringify({version:'1.08-experimental',video:{width:v.videoWidth,height:v.videoHeight,duration:v.duration},frameStep,zone,projectiveHomography:projectiveModel()?.h||null,seeds,collisionStats,templates,tracks},null,2),'application/json');$('csv').onclick=()=>{let rows=['ball,time_sec,x_px,y_px,detected,baseline_x_px,baseline_y_px,advanced_x_px,advanced_y_px,geometry_quality,shadow_x_px,shadow_y_px,shadow_quality,legacy_quality,original_detector_x,original_detector_y,yellow_center_shift_px'];for(let k of keys)for(let p of tracks[k])rows.push(`${k},${p.t.toFixed(4)},${p.x.toFixed(2)},${p.y.toFixed(2)},${p.ok?1:0},${(p.drawX??p.x).toFixed(2)},${(p.drawY??p.y).toFixed(2)},${Number.isFinite(p.advancedX)?p.advancedX.toFixed(2):''},${Number.isFinite(p.advancedY)?p.advancedY.toFixed(2):''},${Number.isFinite(p.geometry?.quality)?p.geometry.quality.toFixed(3):''},${Number.isFinite(p.shadowGeometry?.x)?p.shadowGeometry.x.toFixed(2):''},${Number.isFinite(p.shadowGeometry?.y)?p.shadowGeometry.y.toFixed(2):''},${Number.isFinite(p.shadowGeometry?.quality)?p.shadowGeometry.quality.toFixed(3):''},${Number.isFinite(p.legacyGeometry?.quality)?p.legacyGeometry.quality.toFixed(3):''},${Number.isFinite(p.originalX)?p.originalX.toFixed(2):''},${Number.isFinite(p.originalY)?p.originalY.toFixed(2):''},${Number.isFinite(p.centroidShift)?p.centroidShift.toFixed(2):''}`);save('archibald_carom_tracks_v108.csv',rows.join('\n'),'text/csv')};// Export by recording a composited canvas stream in real time. No fake MP4 extension.
+const mimeCandidates=['video/mp4;codecs="avc1.42E01E"','video/mp4','video/webm;codecs=vp9','video/webm;codecs=vp8','video/webm'];
+$('export').onclick=async()=>{
+ if(exporting||!analyzed)return;
+ if(typeof MediaRecorder==='undefined'||typeof HTMLCanvasElement.prototype.captureStream!=='function'){$('exportStatus').textContent='이 Safari 버전은 Canvas 녹화를 지원하지 않습니다. PC Chrome/Edge에서 저장하거나 향후 별도 인코더가 필요합니다.';return}
+ const mime=mimeCandidates.find(x=>MediaRecorder.isTypeSupported(x));if(!mime){$('exportStatus').textContent='지원되는 동영상 녹화 형식을 찾지 못했습니다.';return}
+ const oldTime=v.currentTime,oldRate=v.playbackRate,oldFull=$('full').checked,oldPreview=previewMode;previewMode=true;
+ const out=document.createElement('canvas');out.width=v.videoWidth;out.height=v.videoHeight;const c=out.getContext('2d');
+ let stream,recorder,chunks=[],raf=0,ended=false;
+ try{
+   v.pause();await seek(0);$('full').checked=false;v.playbackRate=1;exporting=true;enable();$('stopExport').disabled=false;
+   stream=out.captureStream(Math.min(30,Math.max(1,sourceFPS)));
+   recorder=new MediaRecorder(stream,{mimeType:mime,videoBitsPerSecond:5500000});
+   const completed=new Promise((resolve,reject)=>{recorder.ondataavailable=e=>{if(e.data&&e.data.size)chunks.push(e.data)};recorder.onerror=e=>reject(e.error||new Error('녹화 오류'));recorder.onstop=resolve});
+   const render=()=>{if(!exporting)return;try{c.clearRect(0,0,out.width,out.height);c.drawImage(v,0,0,out.width,out.height);draw();c.drawImage(ov,0,0,out.width,out.height);$('exportStatus').textContent=`녹화 중 ${fmt(v.currentTime)} / ${fmt(v.duration)} · ${mime.startsWith('video/mp4')?'MP4':'WebM'} (무음)`}catch(e){$('exportStatus').textContent='합성 오류: '+e.message}raf=requestAnimationFrame(render)};
+   exportStop=()=>{if(ended)return;ended=true;v.pause();cancelAnimationFrame(raf);if(recorder.state!=='inactive')recorder.stop()};
+   v.addEventListener('ended',exportStop,{once:true});recorder.start(500);render();await v.play();await completed;
+   v.removeEventListener('ended',exportStop);if(chunks.length){const ext=mime.startsWith('video/mp4')?'mp4':'webm';const blob=new Blob(chunks,{type:mime});const u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download='archibald_carom_tracked_v1.08-experimental.'+ext;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),60000);$('exportStatus').textContent=`저장 요청 완료: ${ext.toUpperCase()} · ${(blob.size/1048576).toFixed(1)}MB · 무음. iPhone에서는 파일 앱의 다운로드 폴더를 확인하세요.`}else $('exportStatus').textContent='녹화 데이터가 생성되지 않았습니다. 다른 브라우저에서 시도하세요.';
+ }catch(e){$('exportStatus').textContent='영상 저장 실패: '+e.message;if(recorder&&recorder.state!=='inactive')recorder.stop()}
+ finally{exporting=false;exportStop=null;cancelAnimationFrame(raf);if(stream)stream.getTracks().forEach(t=>t.stop());$('stopExport').disabled=true;$('full').checked=oldFull;previewMode=oldPreview;v.playbackRate=oldRate;await seek(oldTime);enable();draw()}
+};
+$('stopExport').onclick=()=>{if(exportStop)exportStop()};
+$('exportStatus').textContent=typeof MediaRecorder==='undefined'||typeof HTMLCanvasElement.prototype.captureStream!=='function'?'이 브라우저는 영상 녹화를 지원하지 않을 수 있습니다.':'분석 완료 후 영상 저장이 가능합니다. MP4 지원 여부는 저장 시 검사합니다.';
+window.addEventListener('resize',draw);enable()})();
+</script></body></html>
